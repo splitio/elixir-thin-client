@@ -1,8 +1,8 @@
-defmodule Split.RPCs.GetTreatments do
+defmodule Split.RPCs.GetTreatmentsWithConfig do
   def build(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
     %{
       "v" => 1,
-      "o" => 0x12,
+      "o" => 0x14,
       "a" => [
         user_key,
         bucketing_key,
@@ -16,8 +16,8 @@ defmodule Split.RPCs.GetTreatments do
     mapped_treatments =
       feature_names
       |> Enum.zip(treatments)
-      |> Enum.reduce(%{}, fn {feature_name, %{"t" => treatment}}, acc ->
-        Map.put(acc, feature_name, treatment)
+      |> Enum.reduce(%{}, fn {feature_name, %{"t" => treatment, "c" => config}}, acc ->
+        Map.put(acc, feature_name, %{treatment: treatment, config: config})
       end)
 
     {:ok, %{treatments: mapped_treatments}}
