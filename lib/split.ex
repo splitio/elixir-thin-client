@@ -17,4 +17,18 @@ defmodule Split do
     |> Pool.send_message()
     |> Split.RPCs.GetTreatmentWithConfig.parse_response()
   end
+
+  def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
+    user_key
+    |> Split.RPCs.GetTreatments.build(feature_names, bucketing_key, attributes)
+    |> Pool.send_message()
+    |> Split.RPCs.GetTreatments.parse_response(feature_names)
+  end
+
+  def get_treatments_with_config(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
+    user_key
+    |> Split.RPCs.GetTreatmentsWithConfig.build(feature_names, bucketing_key, attributes)
+    |> Pool.send_message()
+    |> Split.RPCs.GetTreatmentsWithConfig.parse_response(feature_names)
+  end
 end

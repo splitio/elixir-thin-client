@@ -2,7 +2,7 @@ defmodule Split.RPCs.GetTreatmentWithConfig do
   def build(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     %{
       "v" => 1,
-      "o" => 0x12,
+      "o" => 0x13,
       "a" => [
         user_key,
         bucketing_key,

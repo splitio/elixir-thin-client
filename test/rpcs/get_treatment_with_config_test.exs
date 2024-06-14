@@ -7,7 +7,7 @@ defmodule Rpcs.GetTreatmentWithConfigTest do
     test "builds the correct map" do
       assert %{
                "v" => 1,
-               "o" => 0x12,
+               "o" => 0x13,
                "a" => [
                  "user_key",
                  "bucketing_key",
@@ -20,7 +20,7 @@ defmodule Rpcs.GetTreatmentWithConfigTest do
     test "defaults bucketing_key and attributes" do
       assert %{
                "v" => 1,
-               "o" => 0x12,
+               "o" => 0x13,
                "a" => [
                  "user_key",
                  nil,
