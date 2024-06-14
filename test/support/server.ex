@@ -27,9 +27,24 @@ defmodule Split.Test.Server do
 
     response =
       case Map.get(unpacked_payload, "o") do
-        0 -> %{"s" => 1}
-        17 -> %{"s" => 1, "p" => %{"t" => "on"}}
-        19 -> %{"s" => 1, "p" => %{"t" => "on", "c" => %{"foo" => "bar"}}}
+        0 ->
+          %{"s" => 1}
+
+        17 ->
+          %{"s" => 1, "p" => %{"t" => "on"}}
+
+        19 ->
+          %{"s" => 1, "p" => %{"t" => "on", "c" => %{"foo" => "bar"}}}
+
+        18 ->
+          %{
+            "s" => 1,
+            "p" => %{
+              "r" => [
+                %{"t" => "on"}
+              ]
+            }
+          }
       end
 
     packed_message = Msgpax.pack!(response, iodata: false)
