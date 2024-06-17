@@ -3,7 +3,7 @@ defmodule Split.RPCs.SplitNames do
   def build() do
     %{
       "v" => 1,
-      "o" => 0xA1,
+      "o" => 0xA0,
       "a" => []
     }
   end
