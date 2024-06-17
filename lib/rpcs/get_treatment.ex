@@ -1,4 +1,5 @@
 defmodule Split.RPCs.GetTreatment do
+  @spec build(String.t(), String.t(), String.t() | nil, map() | nil) :: map()
   def build(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     %{
       "v" => 1,
@@ -12,6 +13,7 @@ defmodule Split.RPCs.GetTreatment do
     }
   end
 
+  @spec parse_response(map()) :: {:ok, map()} | {:error, map()}
   def parse_response(%{"s" => 1, "p" => %{"t" => treatment}} = _response) do
     {:ok, %{treatment: treatment}}
   end
