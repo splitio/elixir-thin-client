@@ -44,4 +44,8 @@ defmodule SplitThinElixirTest do
     assert :ok =
              Split.track("user-id-" <> to_string(Enum.random(1..100_000)), "account", "purchase")
   end
+
+  test "split_names/0" do
+    assert {:ok, %{split_names: ["ethan_test"]}} == Split.split_names()
+  end
 end
