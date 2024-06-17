@@ -4,6 +4,8 @@ defmodule Split do
   """
   alias Split.Sockets.Pool
 
+  @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
+          {:ok, map()} | {:error, map()}
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     user_key
     |> Split.RPCs.GetTreatment.build(feature_name, bucketing_key, attributes)
@@ -11,6 +13,8 @@ defmodule Split do
     |> Split.RPCs.GetTreatment.parse_response()
   end
 
+  @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::
+          {:ok, map()} | {:error, map()}
   def get_treatment_with_config(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     user_key
     |> Split.RPCs.GetTreatmentWithConfig.build(feature_name, bucketing_key, attributes)
@@ -18,6 +22,8 @@ defmodule Split do
     |> Split.RPCs.GetTreatmentWithConfig.parse_response()
   end
 
+  @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+          {:ok, map()} | {:error, map()}
   def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
     user_key
     |> Split.RPCs.GetTreatments.build(feature_names, bucketing_key, attributes)
@@ -25,6 +31,8 @@ defmodule Split do
     |> Split.RPCs.GetTreatments.parse_response(feature_names)
   end
 
+  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+          {:ok, map()} | {:error, map()}
   def get_treatments_with_config(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
     user_key
     |> Split.RPCs.GetTreatmentsWithConfig.build(feature_names, bucketing_key, attributes)

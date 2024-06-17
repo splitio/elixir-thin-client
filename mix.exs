@@ -25,7 +25,8 @@ defmodule SplitThinElixir.MixProject do
     [
       {:msgpax, "~> 2.0"},
       {:nimble_pool, "~> 1.0"},
-      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false}
+      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
     ]
   end
 
