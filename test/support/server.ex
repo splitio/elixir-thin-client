@@ -83,6 +83,25 @@ defmodule Split.Test.Server do
               }
             }
           }
+
+        162 ->
+          %{
+            "s" => 1,
+            "p" => %{
+              "s" => [
+                %{
+                  "n" => "test-split",
+                  "t" => "traffic_type",
+                  "k" => false,
+                  "s" => ["on", "off"],
+                  "c" => 12345,
+                  "f" => %{"on" => "foo"},
+                  "d" => "default_treatment",
+                  "e" => ["flag_set"]
+                }
+              ]
+            }
+          }
       end
 
     packed_message = Msgpax.pack!(response, iodata: false)

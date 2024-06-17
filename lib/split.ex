@@ -84,4 +84,11 @@ defmodule Split do
     |> Pool.send_message()
     |> Split.RPCs.Split.parse_response()
   end
+
+  @spec splits() :: {:ok, [Split.t()]} | {:error, map()}
+  def splits do
+    Split.RPCs.Splits.build()
+    |> Pool.send_message()
+    |> Split.RPCs.Splits.parse_response()
+  end
 end
