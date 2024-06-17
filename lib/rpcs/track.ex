@@ -1,4 +1,5 @@
 defmodule Split.RPCs.Track do
+  @spec build(String.t(), String.t(), String.t(), any(), map()) :: map()
   def build(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     %{
       "v" => 1,
@@ -13,6 +14,7 @@ defmodule Split.RPCs.Track do
     }
   end
 
+  @spec parse_response(map()) :: :ok | :error
   def parse_response(%{"s" => 1, "p" => %{"s" => true}}) do
     :ok
   end

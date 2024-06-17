@@ -40,6 +40,8 @@ defmodule Split do
     |> Split.RPCs.GetTreatmentsWithConfig.parse_response(feature_names)
   end
 
+  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+          {:ok, map()} | {:error, map()}
   def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     user_key
     |> Split.RPCs.Track.build(traffic_type, event_type, value, properties)
