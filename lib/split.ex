@@ -48,4 +48,10 @@ defmodule Split do
     |> Pool.send_message()
     |> Split.RPCs.Track.parse_response()
   end
+
+  def split_names do
+    Split.RPCs.SplitNames.build()
+    |> Pool.send_message()
+    |> Split.RPCs.SplitNames.parse_response()
+  end
 end
