@@ -55,6 +55,14 @@ defmodule Split.Test.Server do
               ]
             }
           }
+
+        128 ->
+          %{
+            "s" => 1,
+            "p" => %{
+              "s" => true
+            }
+          }
       end
 
     packed_message = Msgpax.pack!(response, iodata: false)

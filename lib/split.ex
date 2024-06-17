@@ -39,4 +39,13 @@ defmodule Split do
     |> Pool.send_message()
     |> Split.RPCs.GetTreatmentsWithConfig.parse_response(feature_names)
   end
+
+  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+          {:ok, map()} | {:error, map()}
+  def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
+    user_key
+    |> Split.RPCs.Track.build(traffic_type, event_type, value, properties)
+    |> Pool.send_message()
+    |> Split.RPCs.Track.parse_response()
+  end
 end
