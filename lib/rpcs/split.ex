@@ -1,4 +1,6 @@
 defmodule Split.RPCs.Split do
+  alias Split.RPCs.Helpers
+
   @spec build(String.t()) :: map()
   def build(split_name) do
     %{
@@ -10,17 +12,7 @@ defmodule Split.RPCs.Split do
 
   @spec parse_response(map()) :: {:ok, Split.t()} | {:error, map()}
   def parse_response(%{"s" => 1, "p" => %{"n" => payload}} = _response) do
-    {:ok,
-     %Split{
-       name: Map.get(payload, "n", nil),
-       traffic_type: payload["t"],
-       killed: payload["k"],
-       treatments: payload["s"],
-       change_number: payload["c"],
-       configurations: payload["f"],
-       default_treatment: payload["d"],
-       flag_sets: payload["e"]
-     }}
+    {:ok, Helpers.parse_split(payload)}
   end
 
   def parse_response(response) do
