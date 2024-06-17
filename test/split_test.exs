@@ -48,4 +48,9 @@ defmodule SplitThinElixirTest do
   test "split_names/0" do
     assert {:ok, %{split_names: ["ethan_test"]}} == Split.split_names()
   end
+
+  test "split/1" do
+    assert {:ok, %Split{name: "test-split"}} =
+             Split.split("test-split")
+  end
 end

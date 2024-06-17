@@ -64,8 +64,25 @@ defmodule Split.Test.Server do
             }
           }
 
-        161 ->
+        160 ->
           %{"s" => 1, "p" => %{"n" => ["ethan_test"]}}
+
+        161 ->
+          %{
+            "s" => 1,
+            "p" => %{
+              "n" => %{
+                "n" => "test-split",
+                "t" => "traffic_type",
+                "k" => false,
+                "s" => ["on", "off"],
+                "c" => 12345,
+                "f" => %{"on" => "foo"},
+                "d" => "default_treatment",
+                "e" => ["flag_set"]
+              }
+            }
+          }
       end
 
     packed_message = Msgpax.pack!(response, iodata: false)

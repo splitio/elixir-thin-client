@@ -7,7 +7,7 @@ defmodule Rpcs.SplitNamesTest do
     test "builds the correct map" do
       assert %{
                "v" => 1,
-               "o" => 0xA1,
+               "o" => 0xA0,
                "a" => []
              } == SplitNames.build()
     end

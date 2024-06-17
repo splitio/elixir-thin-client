@@ -4,6 +4,28 @@ defmodule Split do
   """
   alias Split.Sockets.Pool
 
+  @type t :: %Split{
+          name: String.t(),
+          traffic_type: String.t(),
+          killed: boolean(),
+          treatments: [String.t()],
+          change_number: integer(),
+          configurations: map(),
+          default_treatment: String.t(),
+          flag_sets: [String.t()]
+        }
+
+  defstruct [
+    :name,
+    :traffic_type,
+    :killed,
+    :treatments,
+    :change_number,
+    :configurations,
+    :default_treatment,
+    :flag_sets
+  ]
+
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
           {:ok, map()} | {:error, map()}
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
@@ -53,5 +75,13 @@ defmodule Split do
     Split.RPCs.SplitNames.build()
     |> Pool.send_message()
     |> Split.RPCs.SplitNames.parse_response()
+  end
+
+  @spec split(String.t()) :: {:ok, Split.t()} | {:error, map()}
+  def split(name) do
+    name
+    |> Split.RPCs.Split.build()
+    |> Pool.send_message()
+    |> Split.RPCs.Split.parse_response()
   end
 end
