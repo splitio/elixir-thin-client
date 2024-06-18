@@ -34,7 +34,9 @@ defmodule Rpcs.GetTreatmentTest do
   describe "parse_response/1" do
     test "returns {:ok, %{treatment: treatment}}" do
       response = %{"s" => 1, "p" => %{"t" => "treatment"}}
-      assert {:ok, %{treatment: "treatment"}} == GetTreatment.parse_response(response)
+
+      assert {:ok, %Split.Treatment{treatment: "treatment"}} =
+               GetTreatment.parse_response(response)
     end
 
     test "returns {:error, response}" do
