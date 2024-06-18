@@ -2,7 +2,7 @@ defmodule Split.Treatment do
   defstruct [
     :treatment,
     label: nil,
-    config: [],
+    config: nil,
     change_number: nil,
     timestamp: nil
   ]
@@ -10,7 +10,7 @@ defmodule Split.Treatment do
   @type t :: %__MODULE__{
           treatment: String.t(),
           label: String.t() | nil,
-          config: list(),
+          config: String.t() | nil,
           change_number: integer() | nil,
           timestamp: integer() | nil
         }
