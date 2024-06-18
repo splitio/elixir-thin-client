@@ -31,35 +31,27 @@ defmodule Split do
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
           {:ok, Treatment.t()} | {:error, map()}
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
-    user_key
-    |> Split.RPCs.GetTreatment.build(feature_name, bucketing_key, attributes)
-    |> Pool.send_message()
-    |> Split.RPCs.GetTreatment.parse_response()
-    |> case do
-      {:ok, treatment} ->
-        Telemetry.send_impression(user_key, feature_name, treatment)
-        {:ok, treatment}
-
-      {:error, response} ->
-        {:error, response}
-    end
+    execute_treatment_rpc(
+      user_key,
+      feature_name,
+      bucketing_key,
+      attributes,
+      Split.RPCs.GetTreatment,
+      :get_treatment
+    )
   end
 
   @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::
           {:ok, map()} | {:error, map()}
   def get_treatment_with_config(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
-    user_key
-    |> Split.RPCs.GetTreatmentWithConfig.build(feature_name, bucketing_key, attributes)
-    |> Pool.send_message()
-    |> Split.RPCs.GetTreatmentWithConfig.parse_response()
-    |> case do
-      {:ok, treatment} ->
-        Telemetry.send_impression(user_key, feature_name, treatment)
-        {:ok, treatment}
-
-      {:error, response} ->
-        {:error, response}
-    end
+    execute_treatment_rpc(
+      user_key,
+      feature_name,
+      bucketing_key,
+      attributes,
+      Split.RPCs.GetTreatmentWithConfig,
+      :get_treatment_with_config
+    )
   end
 
   @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) ::
@@ -130,5 +122,36 @@ defmodule Split do
     Split.RPCs.Splits.build()
     |> Pool.send_message()
     |> Split.RPCs.Splits.parse_response()
+  end
+
+  defp execute_treatment_rpc(user_key, feature_name, bucketing_key, attributes, rpc, rpc_name) do
+    :telemetry.span(
+      [:split, :treatment],
+      %{
+        method: rpc_name,
+        user_key: user_key,
+        feature_name: feature_name,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      },
+      fn ->
+        user_key
+        |> rpc.build(feature_name, bucketing_key, attributes)
+        |> Pool.send_message()
+        |> rpc.parse_response()
+        |> case do
+          {:ok, treatment} ->
+            Telemetry.send_impression(user_key, feature_name, treatment)
+            {:ok, treatment}
+
+          {:error, response} ->
+            {:error, response}
+        end
+        |> then(fn
+          {:ok, treatment} = response -> {response, %{treatment: treatment}}
+          {:error, _} = response -> {response, %{}}
+        end)
+      end
+    )
   end
 end
