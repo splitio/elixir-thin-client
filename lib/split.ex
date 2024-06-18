@@ -57,41 +57,27 @@ defmodule Split do
   @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) ::
           {:ok, map()} | {:error, map()}
   def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
-    user_key
-    |> Split.RPCs.GetTreatments.build(feature_names, bucketing_key, attributes)
-    |> Pool.send_message()
-    |> Split.RPCs.GetTreatments.parse_response(feature_names)
-    |> case do
-      {:ok, treatments} ->
-        Enum.each(treatments, fn {feature_name, treatment} ->
-          Telemetry.send_impression(user_key, feature_name, treatment)
-        end)
-
-        {:ok, treatments}
-
-      {:error, response} ->
-        {:error, response}
-    end
+    execute_treatment_rpc(
+      user_key,
+      feature_names,
+      bucketing_key,
+      attributes,
+      Split.RPCs.GetTreatments,
+      :get_treatments
+    )
   end
 
   @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
           {:ok, map()} | {:error, map()}
   def get_treatments_with_config(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
-    user_key
-    |> Split.RPCs.GetTreatmentsWithConfig.build(feature_names, bucketing_key, attributes)
-    |> Pool.send_message()
-    |> Split.RPCs.GetTreatmentsWithConfig.parse_response(feature_names)
-    |> case do
-      {:ok, treatments} ->
-        Enum.each(treatments, fn {feature_name, treatment} ->
-          Telemetry.send_impression(user_key, feature_name, treatment)
-        end)
-
-        {:ok, treatments}
-
-      {:error, response} ->
-        {:error, response}
-    end
+    execute_treatment_rpc(
+      user_key,
+      feature_names,
+      bucketing_key,
+      attributes,
+      Split.RPCs.GetTreatmentsWithConfig,
+      :get_treatments_with_config
+    )
   end
 
   @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
@@ -104,9 +90,7 @@ defmodule Split do
   end
 
   def split_names do
-    Split.RPCs.SplitNames.build()
-    |> Pool.send_message()
-    |> Split.RPCs.SplitNames.parse_response()
+    execute_management_rpc(Split.RPCs.SplitNames, :split_names)
   end
 
   @spec split(String.t()) :: {:ok, Split.t()} | {:error, map()}
@@ -119,14 +103,27 @@ defmodule Split do
 
   @spec splits() :: {:ok, [Split.t()]} | {:error, map()}
   def splits do
-    Split.RPCs.Splits.build()
-    |> Pool.send_message()
-    |> Split.RPCs.Splits.parse_response()
+    execute_management_rpc(Split.RPCs.Splits, :splits)
+  end
+
+  defp execute_management_rpc(rpc, rpc_name) do
+    :telemetry.span(
+      [:split, :management],
+      %{
+        method: rpc_name
+      },
+      fn ->
+        rpc.build()
+        |> Pool.send_message()
+        |> rpc.parse_response()
+        |> then(&{&1, %{}})
+      end
+    )
   end
 
   defp execute_treatment_rpc(user_key, feature_name, bucketing_key, attributes, rpc, rpc_name) do
     :telemetry.span(
-      [:split, :treatment],
+      [:split, :client],
       %{
         method: rpc_name,
         user_key: user_key,
@@ -140,9 +137,19 @@ defmodule Split do
         |> Pool.send_message()
         |> rpc.parse_response()
         |> case do
-          {:ok, treatment} ->
-            Telemetry.send_impression(user_key, feature_name, treatment)
-            {:ok, treatment}
+          {:ok, treatments?} ->
+            case is_list(treatments?) do
+              true ->
+                Enum.each(treatments?, fn {feature_name, treatment} ->
+                  Telemetry.send_impression(user_key, feature_name, treatment)
+                end)
+
+                {:ok, treatments?}
+
+              false ->
+                Telemetry.send_impression(user_key, feature_name, treatments?)
+                {:ok, treatments?}
+            end
 
           {:error, response} ->
             {:error, response}
