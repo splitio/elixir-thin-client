@@ -1,8 +1,8 @@
 defmodule SplitThinElixirTest do
   use ExUnit.Case
 
-  alias Split.Sockets.Pool
   alias Split.Impression
+  alias Split.Sockets.Pool
   alias Split.Treatment
 
   setup_all do
