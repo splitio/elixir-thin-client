@@ -46,7 +46,7 @@ defmodule SplitThinElixirTest do
   end
 
   test "get_treatments_with_config/2" do
-    assert {:ok, %{treatments: %{"ethan_test" => %{treatment: "on", config: %{"foo" => "bar"}}}}} =
+    assert {:ok, %{"ethan_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}}} =
              Split.get_treatments_with_config("user-id-" <> to_string(Enum.random(1..100_000)), [
                "ethan_test"
              ])
