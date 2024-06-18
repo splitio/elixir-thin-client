@@ -2,6 +2,7 @@ defmodule Rpcs.GetTreatmentWithConfigTest do
   use ExUnit.Case
 
   alias Split.RPCs.GetTreatmentWithConfig
+  alias Split.Treatment
 
   describe "build/4" do
     test "builds the correct map" do
@@ -35,7 +36,7 @@ defmodule Rpcs.GetTreatmentWithConfigTest do
     test "returns {:ok, %{treatment: treatment}}" do
       response = %{"s" => 1, "p" => %{"t" => "treatment", "c" => %{"foo" => "bar"}}}
 
-      assert {:ok, %{treatment: "treatment", config: %{"foo" => "bar"}}} ==
+      assert {:ok, %Treatment{treatment: "treatment", config: %{"foo" => "bar"}}} =
                GetTreatmentWithConfig.parse_response(response)
     end
 

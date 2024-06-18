@@ -1,4 +1,6 @@
 defmodule Split.RPCs.GetTreatmentWithConfig do
+  alias Split.Treatment
+
   @spec build(String.t(), String.t(), String.t() | nil, map() | nil) :: map()
   def build(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     %{
@@ -13,9 +15,9 @@ defmodule Split.RPCs.GetTreatmentWithConfig do
     }
   end
 
-  @spec parse_response(map()) :: {:ok, map()} | {:error, map()}
-  def parse_response(%{"s" => 1, "p" => %{"t" => treatment, "c" => config}} = _response) do
-    {:ok, %{treatment: treatment, config: config}}
+  @spec parse_response(map()) :: {:ok, Treatment.t()} | {:error, map()}
+  def parse_response(%{"s" => 1, "p" => treatment_payload}) do
+    {:ok, Treatment.build_from_daemon_response(treatment_payload)}
   end
 
   def parse_response(response) do
