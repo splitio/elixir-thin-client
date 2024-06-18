@@ -3,6 +3,8 @@ defmodule Split do
   Documentation for `Split`.
   """
   alias Split.Sockets.Pool
+  alias Split.Telemetry
+  alias Split.Treatment
 
   @type t :: %Split{
           name: String.t(),
@@ -27,12 +29,20 @@ defmodule Split do
   ]
 
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
-          {:ok, map()} | {:error, map()}
+          {:ok, Treatment.t()} | {:error, map()}
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     user_key
     |> Split.RPCs.GetTreatment.build(feature_name, bucketing_key, attributes)
     |> Pool.send_message()
     |> Split.RPCs.GetTreatment.parse_response()
+    |> case do
+      {:ok, treatment} ->
+        Telemetry.send_impression(user_key, feature_name, treatment)
+        {:ok, treatment}
+
+      {:error, response} ->
+        {:error, response}
+    end
   end
 
   @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::

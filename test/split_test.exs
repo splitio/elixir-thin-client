@@ -2,6 +2,7 @@ defmodule SplitThinElixirTest do
   use ExUnit.Case
 
   alias Split.Sockets.Pool
+  alias Split.Impression
 
   setup_all do
     child =
@@ -15,9 +16,19 @@ defmodule SplitThinElixirTest do
     :ok
   end
 
-  test "get_treatment/2" do
-    assert {:ok, %{treatment: "on"}} =
-             Split.get_treatment("user-id-" <> to_string(Enum.random(1..100_000)), "ethan_test")
+  describe "get_treatment/2" do
+    test "returns expected struct" do
+      assert {:ok, %{treatment: "on"}} =
+               Split.get_treatment("user-id-" <> to_string(Enum.random(1..100_000)), "ethan_test")
+    end
+
+    test "emits telemetry event for impression listening" do
+      ref = :telemetry_test.attach_event_handlers(self(), [[:split, :impression]])
+
+      Split.get_treatment("user-id-" <> to_string(Enum.random(1..100_000)), "ethan_test")
+
+      assert_received {[:split, :impression], ^ref, _, %{impression: %Impression{}}}
+    end
   end
 
   test "get_treatment_with_config/2" do
