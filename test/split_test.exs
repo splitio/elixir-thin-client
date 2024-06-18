@@ -3,6 +3,7 @@ defmodule SplitThinElixirTest do
 
   alias Split.Sockets.Pool
   alias Split.Impression
+  alias Split.Treatment
 
   setup_all do
     child =
@@ -40,7 +41,7 @@ defmodule SplitThinElixirTest do
   end
 
   test "get_treatments/2" do
-    assert {:ok, %{treatments: %{"ethan_test" => "on"}}} =
+    assert {:ok, %{"ethan_test" => %Treatment{treatment: "on"}}} =
              Split.get_treatments("user-id-" <> to_string(Enum.random(1..100_000)), ["ethan_test"])
   end
 
