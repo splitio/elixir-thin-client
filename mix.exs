@@ -28,7 +28,8 @@ defmodule SplitThinElixir.MixProject do
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:telemetry, "~> 1.0"},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:cachex, "~> 3.0"}
     ]
   end
 

@@ -14,7 +14,12 @@ defmodule Rpcs.GetTreatmentTest do
                  "feature_name",
                  %{}
                ]
-             } == GetTreatment.build("user_key", "feature_name", "bucketing_key")
+             } ==
+               GetTreatment.build(
+                 user_key: "user_key",
+                 feature_name: "feature_name",
+                 bucketing_key: "bucketing_key"
+               )
     end
 
     test "defaults bucketing_key and attributes" do
@@ -27,7 +32,7 @@ defmodule Rpcs.GetTreatmentTest do
                  "feature_name",
                  %{}
                ]
-             } == GetTreatment.build("user_key", "feature_name")
+             } == GetTreatment.build(user_key: "user_key", feature_name: "feature_name")
     end
   end
 
@@ -36,12 +41,12 @@ defmodule Rpcs.GetTreatmentTest do
       response = %{"s" => 1, "p" => %{"t" => "treatment"}}
 
       assert {:ok, %Split.Treatment{treatment: "treatment"}} =
-               GetTreatment.parse_response(response)
+               GetTreatment.parse_response(response, [])
     end
 
     test "returns {:error, response}" do
       response = %{"s" => 0}
-      assert {:error, response} == GetTreatment.parse_response(response)
+      assert {:error, response} == GetTreatment.parse_response(response, [])
     end
   end
 end

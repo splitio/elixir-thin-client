@@ -14,7 +14,12 @@ defmodule Rpcs.GetTreatmentsWithConfigTest do
                  ["feature_name"],
                  %{}
                ]
-             } == GetTreatmentsWithConfig.build("user_key", ["feature_name"], "bucketing_key")
+             } ==
+               GetTreatmentsWithConfig.build(
+                 user_key: "user_key",
+                 feature_names: ["feature_name"],
+                 bucketing_key: "bucketing_key"
+               )
     end
 
     test "defaults bucketing_key and attributes" do
@@ -27,7 +32,11 @@ defmodule Rpcs.GetTreatmentsWithConfigTest do
                  ["feature_name"],
                  %{}
                ]
-             } == GetTreatmentsWithConfig.build("user_key", ["feature_name"])
+             } ==
+               GetTreatmentsWithConfig.build(
+                 user_key: "user_key",
+                 feature_names: ["feature_name"]
+               )
     end
   end
 end
