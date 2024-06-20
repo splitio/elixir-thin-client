@@ -43,12 +43,12 @@ defmodule Split.Sockets.Pool do
            packet: 0
          ) do
       {:ok, port} ->
-        register_rpc = Split.RPCs.Register.build()
+        register_rpc = Split.RPC.Register.build()
 
         :ok =
           port
           |> send_message(register_rpc)
-          |> Split.RPCs.Register.parse_response()
+          |> Split.RPC.Register.parse_response()
 
         {:ok, port, pool_state}
 

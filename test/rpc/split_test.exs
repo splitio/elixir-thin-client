@@ -1,7 +1,7 @@
-defmodule Rpcs.SplitTest do
+defmodule Split.RPC.SplitTest do
   use ExUnit.Case
 
-  alias Split.RPCs.Split, as: SplitRPC
+  alias Split.RPC.Split, as: SplitRPC
 
   describe "build/1" do
     test "builds the correct map" do

@@ -1,7 +1,7 @@
-defmodule Rpcs.GetTreatmentWithConfigTest do
+defmodule Split.RPC.GetTreatmentWithConfigTest do
   use ExUnit.Case
 
-  alias Split.RPCs.GetTreatmentWithConfig
+  alias Split.RPC.GetTreatmentWithConfig
   alias Split.Treatment
 
   describe "build/4" do

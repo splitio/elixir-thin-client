@@ -1,4 +1,4 @@
-defmodule Split.RPCs.GetTreatments do
+defmodule Split.RPC.GetTreatments do
   alias Split.Treatment
 
   @behaviour Split.RPC

@@ -1,4 +1,4 @@
-defmodule Split.RPCs.Helpers do
+defmodule Split.RPC.Helpers do
   @spec parse_split(map()) :: Split.t()
   def parse_split(payload) do
     %Split{

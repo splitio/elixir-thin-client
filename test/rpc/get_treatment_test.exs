@@ -1,7 +1,7 @@
-defmodule Rpcs.GetTreatmentTest do
+defmodule Split.RPC.GetTreatmentTest do
   use ExUnit.Case
 
-  alias Split.RPCs.GetTreatment
+  alias Split.RPC.GetTreatment
 
   describe "build/4" do
     test "builds the correct map" do
