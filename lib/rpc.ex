@@ -6,6 +6,7 @@ defmodule Split.RPC do
   @callback build(Keyword.t()) :: map()
   @callback parse_response(map(), Keyword.t()) :: {:ok, map()} | {:error, map()}
 
+  @spec execute_treatment_rpc(module(), Keyword.t()) :: {:ok, map()} | {:error, map()}
   def execute_treatment_rpc(rpc, opts) do
     sorted_attribute_binary = opts[:attributes] |> Enum.sort() |> :erlang.term_to_binary()
     user_key = opts[:user_key]
@@ -31,13 +32,15 @@ defmodule Split.RPC do
     end
   end
 
-  def execute_rpc(rpc, opts) do
+  @spec execute_rpc(module(), Keyword.t()) :: {:ok, map()} | {:error, map()}
+  defp execute_rpc(rpc, opts) do
     opts
     |> rpc.build()
     |> Pool.send_message()
     |> rpc.parse_response(opts)
   end
 
+  @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
   def send_impression(user_key, feature_name, %Treatment{} = treatment) do
     Telemetry.send_impression(user_key, feature_name, treatment)
   end
