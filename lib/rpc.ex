@@ -8,18 +8,16 @@ defmodule Split.RPC do
 
   @spec execute_treatment_rpc(module(), Keyword.t()) :: {:ok, map()} | {:error, map()}
   def execute_treatment_rpc(rpc, opts) do
-    sorted_attribute_binary = opts[:attributes] |> Enum.sort() |> :erlang.term_to_binary()
     user_key = opts[:user_key]
     feature_name = opts[:feature_name]
 
-    cache_key =
-      "#{user_key}#{feature_name}#{sorted_attribute_binary}" |> :erlang.crc32()
+    cache_key = generate_cache_key(opts)
 
-    case Process.get("split_sdk_cache-#{cache_key}") do
+    case Process.get(cache_key) do
       nil ->
         case execute_rpc(rpc, opts) do
           {:ok, treatment} ->
-            Process.put("split_sdk_cache-#{cache_key}", treatment)
+            Process.put(cache_key, treatment)
             send_impression(user_key, feature_name, treatment)
             {:ok, treatment}
 
@@ -30,6 +28,16 @@ defmodule Split.RPC do
       treatment ->
         {:ok, treatment}
     end
+  end
+
+  def generate_cache_key(opts) do
+    sorted_attribute_binary = opts[:attributes] |> Enum.sort() |> :erlang.term_to_binary()
+    user_key = opts[:user_key]
+    feature_name = opts[:feature_name]
+
+    "#{user_key}#{feature_name}#{sorted_attribute_binary}"
+    |> :erlang.crc32()
+    |> then(&"split_sdk_cache-#{&1}")
   end
 
   @spec execute_rpc(module(), Keyword.t()) :: {:ok, map()} | {:error, map()}
