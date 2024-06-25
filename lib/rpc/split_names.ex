@@ -1,4 +1,4 @@
-defmodule Split.RPCs.SplitNames do
+defmodule Split.RPC.SplitNames do
   @spec build() :: map()
   def build() do
     %{

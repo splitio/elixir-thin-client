@@ -1,4 +1,4 @@
-defmodule Split.RPCs.Register do
+defmodule Split.RPC.Register do
   @spec build() :: map()
   def build do
     %{

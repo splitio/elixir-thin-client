@@ -1,7 +1,7 @@
-defmodule Rpcs.RegisterTest do
+defmodule Split.RPC.RegisterTest do
   use ExUnit.Case
 
-  alias Split.RPCs.Register
+  alias Split.RPC.Register
 
   describe "build/4" do
     test "builds the correct map" do

@@ -1,4 +1,4 @@
-defmodule Split.RPCs.Track do
+defmodule Split.RPC.Track do
   @spec build(String.t(), String.t(), String.t(), any(), map()) :: map()
   def build(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     %{

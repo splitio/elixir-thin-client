@@ -1,7 +1,7 @@
-defmodule Rpcs.TrackTest do
+defmodule Split.RPC.TrackTest do
   use ExUnit.Case
 
-  alias Split.RPCs.Track
+  alias Split.RPC.Track
 
   describe "build/4" do
     test "builds the correct map" do

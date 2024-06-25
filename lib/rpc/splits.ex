@@ -1,5 +1,5 @@
-defmodule Split.RPCs.Splits do
-  alias Split.RPCs.Helpers
+defmodule Split.RPC.Splits do
+  alias Split.RPC.Helpers
 
   @spec build() :: map()
   def build() do

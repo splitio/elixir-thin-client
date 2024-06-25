@@ -1,11 +1,19 @@
-defmodule Split.RPCs.GetTreatmentsWithConfig do
+defmodule Split.RPC.GetTreatments do
   alias Split.Treatment
 
-  @spec build(String.t(), [String.t()], String.t() | nil, map() | nil) :: map()
-  def build(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
+  @behaviour Split.RPC
+
+  @impl Split.RPC
+  @spec build(Keyword.t()) :: map()
+  def build(opts) do
+    user_key = Keyword.fetch!(opts, :user_key)
+    feature_names = Keyword.fetch!(opts, :feature_names)
+    bucketing_key = Keyword.get(opts, :bucketing_key, nil)
+    attributes = Keyword.get(opts, :attributes, %{})
+
     %{
       "v" => 1,
-      "o" => 0x14,
+      "o" => 0x12,
       "a" => [
         user_key,
         bucketing_key,
@@ -15,8 +23,10 @@ defmodule Split.RPCs.GetTreatmentsWithConfig do
     }
   end
 
+  @impl Split.RPC
   @spec parse_response(map(), [String.t()]) :: {:ok, map()} | {:error, map()}
-  def parse_response(%{"s" => 1, "p" => %{"r" => treatment_payloads}}, feature_names) do
+  def parse_response(%{"s" => 1, "p" => %{"r" => treatment_payloads}}, opts) do
+    feature_names = Keyword.fetch!(opts, :feature_names)
     treatments = Enum.map(treatment_payloads, &Treatment.build_from_daemon_response/1)
 
     mapped_treatments =
