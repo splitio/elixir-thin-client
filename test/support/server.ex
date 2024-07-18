@@ -1,16 +1,16 @@
-socket_path = "/tmp/test-server.sock"
-
 defmodule Split.Test.Server do
   use GenServer
 
   require Logger
+
+  @socket_path "/tmp/elixir-splitd.sock"
 
   def start_link(_) do
     GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
   end
 
   def init(_port) do
-    {:ok, socket} = :gen_tcp.listen(0, active: true, ifaddr: {:local, "/tmp/elixir-splitd.sock"})
+    {:ok, socket} = :gen_tcp.listen(0, active: true, ifaddr: {:local, @socket_path})
     send(self(), :accept)
     {:ok, %{socket: socket}}
   end
