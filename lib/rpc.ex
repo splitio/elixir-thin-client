@@ -8,26 +8,32 @@ defmodule Split.RPC do
 
   @spec execute_treatment_rpc(module(), Keyword.t()) :: {:ok, map()} | {:error, map()}
   def execute_treatment_rpc(rpc, opts) do
-    user_key = opts[:user_key]
-    feature_name = opts[:feature_name]
+    :telemetry.span([:split, :function], %{rpc: inspect(rpc)}, fn ->
+      user_key = opts[:user_key]
+      feature_name = opts[:feature_name]
 
-    cache_key = generate_cache_key(opts)
+      cache_key = generate_cache_key(opts)
 
-    case Process.get(cache_key) do
-      nil ->
-        case execute_rpc(rpc, opts) do
-          {:ok, treatment} ->
-            Process.put(cache_key, treatment)
-            send_impression(user_key, feature_name, treatment)
-            {:ok, treatment}
+      case Process.get(cache_key) do
+        nil ->
+          case execute_rpc(rpc, opts) do
+            {:ok, treatment} ->
+              Process.put(cache_key, treatment)
+              send_impression(user_key, feature_name, treatment)
+              {:ok, treatment}
+              {:ok, treatment}
 
-          {:error, response} ->
-            {:error, response}
-        end
+            {:error, response} ->
+              {:error, response}
+          end
 
-      treatment ->
-        {:ok, treatment}
-    end
+        treatment ->
+          {:ok, treatment}
+      end
+      |> then(fn {:ok, treatment} = response ->
+        {response, %{treatment: treatment}}
+      end)
+    end)
   end
 
   def generate_cache_key(opts) do
@@ -40,12 +46,16 @@ defmodule Split.RPC do
     |> then(&"split_sdk_cache-#{&1}")
   end
 
-  @spec execute_rpc(module(), Keyword.t()) :: {:ok, map()} | {:error, map()}
-  defp execute_rpc(rpc, opts) do
-    opts
-    |> rpc.build()
-    |> Pool.send_message()
-    |> rpc.parse_response(opts)
+  def execute_rpc(rpc, opts) do
+    :telemetry.span([:split, :rpc], %{rpc: inspect(rpc)}, fn ->
+      opts
+      |> rpc.build()
+      |> Pool.send_message()
+      |> rpc.parse_response(opts)
+      |> then(fn {status, _} = response ->
+        {response, %{execution_status: status}}
+      end)
+    end)
   end
 
   @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
