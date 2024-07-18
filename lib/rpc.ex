@@ -21,7 +21,6 @@ defmodule Split.RPC do
               Process.put(cache_key, treatment)
               send_impression(user_key, feature_name, treatment)
               {:ok, treatment}
-              {:ok, treatment}
 
             {:error, response} ->
               {:error, response}
