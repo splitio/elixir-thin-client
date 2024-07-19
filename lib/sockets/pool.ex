@@ -17,7 +17,7 @@ defmodule Split.Sockets.Pool do
   end
 
   def send_message(message) do
-    NimblePool.checkout!(__MODULE__, :checkout, fn _i_dont_know_what_this_is, port ->
+    NimblePool.checkout!(__MODULE__, :checkout, fn _caller, port ->
       response = send_message(port, message)
       {response, port}
     end)
@@ -32,6 +32,15 @@ defmodule Split.Sockets.Pool do
     port
     |> :gen_tcp.send(payload)
     |> receive_response(port)
+  end
+
+  @impl NimblePool
+  def init_pool(%{socket_path: socket_path} = opts) do
+    if File.exists?(socket_path) do
+      {:ok, opts}
+    else
+      {:stop, :socket_not_found}
+    end
   end
 
   @impl NimblePool
@@ -52,8 +61,9 @@ defmodule Split.Sockets.Pool do
 
         {:ok, port, pool_state}
 
-      _ ->
-        {:ok, nil, pool_state}
+      {:error, _reason} = error ->
+        IO.inspect(error, label: "conn error")
+        {:ok, error, pool_state}
     end
   end
 
