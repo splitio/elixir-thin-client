@@ -62,7 +62,6 @@ defmodule Split.Sockets.Pool do
         {:ok, port, pool_state}
 
       {:error, _reason} = error ->
-        IO.inspect(error, label: "conn error")
         {:ok, error, pool_state}
     end
   end
