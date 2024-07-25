@@ -1,4 +1,7 @@
 defmodule Split.RPC.Split do
+  @moduledoc """
+  A split represents an Experiment/Feature in Split.io.
+  """
   alias Split.RPC.Helpers
 
   @spec build(String.t()) :: map()

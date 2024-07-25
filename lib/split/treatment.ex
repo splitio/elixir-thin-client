@@ -31,4 +31,15 @@ defmodule Split.Treatment do
       timestamp: timestamp
     }
   end
+
+  @spec fallback_treatment() :: t
+  def fallback_treatment() do
+    %Split.Treatment{
+      treatment: "control",
+      label: "default rule",
+      config: nil,
+      change_number: nil,
+      timestamp: nil
+    }
+  end
 end

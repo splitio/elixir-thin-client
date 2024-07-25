@@ -2,9 +2,13 @@
 
 **TODO: Add description**
 
-## Installation
+## Getting Started
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+A step-by-step guide on how to integrate the Split.io thin client for Elixir into your app.
+
+### Installing from Hex.pm
+
+The Split Elixir thin client is publisehd as a package in hex.pm. It can be installed
 by adding `split_thin_elixir` to your list of dependencies in `mix.exs`:
 
 ```elixir
@@ -14,10 +18,6 @@ def deps do
   ]
 end
 ```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/split_thin_elixir>.
 
 ## Testing
 

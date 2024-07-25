@@ -1,6 +1,9 @@
 defmodule Split do
   @moduledoc """
   Documentation for `Split`.
+
+  ## Telemetry support
+
   """
   alias Split.Sockets.Pool
   alias Split.Treatment

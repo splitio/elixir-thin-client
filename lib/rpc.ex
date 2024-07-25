@@ -4,7 +4,7 @@ defmodule Split.RPC do
   alias Split.Treatment
 
   @callback build(Keyword.t()) :: map()
-  @callback parse_response(map(), Keyword.t()) :: {:ok, map()} | {:error, map()}
+  @callback parse_response({:ok, map()}, Keyword.t()) :: {:ok, map()} | {:error, term()}
 
   @spec execute_treatment_rpc(module(), Keyword.t()) :: {:ok, map()} | {:error, map()}
   def execute_treatment_rpc(rpc, opts) do
@@ -12,25 +12,20 @@ defmodule Split.RPC do
       user_key = opts[:user_key]
       feature_name = opts[:feature_name]
 
-      cache_key = generate_cache_key(opts)
-
-      case Process.get(cache_key) do
-        nil ->
-          case execute_rpc(rpc, opts) do
-            {:ok, treatment} ->
-              Process.put(cache_key, treatment)
-              send_impression(user_key, feature_name, treatment)
-              {:ok, treatment}
-
-            {:error, response} ->
-              {:error, response}
-          end
-
-        treatment ->
+      case execute_rpc(rpc, opts) do
+        {:ok, treatment} ->
+          send_impression(user_key, feature_name, treatment)
           {:ok, treatment}
+
+        {:error, response} ->
+          {:error, response}
       end
-      |> then(fn {:ok, treatment} = response ->
-        {response, %{treatment: treatment}}
+      |> then(fn
+        {:ok, treatment} = response ->
+          {response, %{treatment: treatment}}
+
+        {:error, _reason} = response ->
+          {response, %{treatment: nil}}
       end)
     end)
   end

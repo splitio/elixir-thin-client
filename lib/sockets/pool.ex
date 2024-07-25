@@ -3,6 +3,8 @@ defmodule Split.Sockets.Pool do
 
   @behaviour NimblePool
 
+  alias Split.Sockets.Conn
+
   def child_spec(opts) do
     %{
       id: __MODULE__,
@@ -14,8 +16,9 @@ defmodule Split.Sockets.Pool do
     NimblePool.start_link(
       worker: {__MODULE__, opts},
       # TODO: make this configurable
-      # pool_size: pool_size,
-      lazy: true
+      # pool_size: 100,
+      lazy: false,
+      worker_idle_timeout: 60_000
     )
   end
 
@@ -23,22 +26,30 @@ defmodule Split.Sockets.Pool do
     NimblePool.checkout!(
       __MODULE__,
       :checkout,
-      fn _caller, port ->
-        response = send_message(port, message)
-        {response, port}
-      end
+      fn caller, {state, conn, _idle_time} ->
+        with {:ok, conn} <- Conn.connect(conn),
+             {:ok, conn, resp} <- Conn.send_message(conn, message) do
+          {{:ok, resp}, transfer_if_open(conn, state, caller)}
+        else
+          {:error, conn, error} ->
+            {{:error, error}, transfer_if_open(conn, state, caller)}
+        end
+      end,
+      5_000
     )
   end
 
-  def send_message(port, message) do
-    packed_message = Msgpax.pack!(message, iodata: false)
-
-    payload =
-      <<byte_size(packed_message)::integer-unsigned-little-size(32), packed_message::binary>>
-
-    port
-    |> :gen_tcp.send(payload)
-    |> receive_response(port)
+  defp transfer_if_open(conn, state, {pid, _} = caller) do
+    if Conn.is_open?(conn) do
+      if state == :fresh do
+        NimblePool.update(caller, conn)
+        {:ok, ^conn} = Conn.transfer_ownership(conn, pid)
+      else
+        {:ok, conn}
+      end
+    else
+      :closed
+    end
   end
 
   @impl NimblePool
@@ -52,67 +63,46 @@ defmodule Split.Sockets.Pool do
 
   @impl NimblePool
   def init_worker(%{socket_path: socket_path} = pool_state) do
-    parent = self()
-
-    connect_opts = [
-      :binary,
-      reuseaddr: true,
-      active: false,
-      packet: 0
-    ]
-
-    # TODO: Make this configurable
-    connect_timeout = 1000
-
-    async = fn ->
-      case :gen_tcp.connect({:local, socket_path}, 0, connect_opts, connect_timeout) do
-        {:ok, socket} ->
-          :ok = :gen_tcp.controlling_process(socket, parent)
-
-          :ok =
-            socket
-            |> send_message(Split.RPC.Register.build())
-            |> Split.RPC.Register.parse_response()
-
-          socket
-
-        {:error, _reason} = error ->
-          Logger.error("Error establishing socket connection: #{inspect(error)}")
-          error
-      end
-    end
-
-    {:async, async, pool_state}
+    {:ok, Conn.new(socket_path, []), pool_state}
   end
 
   @impl NimblePool
-  def handle_checkout(:checkout, _port, worker_state, pool_state) do
-    {:ok, worker_state, worker_state, pool_state}
+  def handle_checkout(:checkout, _from, %{socket: nil} = conn, pool_state) do
+    idle_time = System.monotonic_time() - conn.last_checkin
+    {:ok, {:fresh, conn, idle_time}, conn, pool_state}
   end
 
-  @impl NimblePool
-  def terminate_worker(reason, socket, pool_state) when is_port(socket) do
-    Logger.error("Terminating worker with reason: #{inspect(reason)}")
-    :gen_tcp.close(socket)
-    {:ok, pool_state}
-  end
+  def handle_checkout(:checkout, _from, conn, pool_state) do
+    idle_time = System.monotonic_time() - conn.last_checkin
 
-  def terminate_worker(_reason, _disconnected_socket, pool_state) do
-    {:ok, pool_state}
-  end
-
-  defp receive_response({:error, reason}, _port) do
-    {:error, reason}
-  end
-
-  defp receive_response(:ok, port) do
-    with {:ok, <<response_size::little-unsigned-size(32)>>} <- :gen_tcp.recv(port, 4),
-         {:ok, response} <- :gen_tcp.recv(port, response_size) do
-      Msgpax.unpack!(response)
+    if Conn.is_open?(conn) do
+      {:ok, {:reused, conn, idle_time}, conn, pool_state}
     else
-      error ->
-        Logger.error("Error receiving response: #{inspect(error)}")
-        error
+      {:remove, :closed, pool_state}
     end
+  end
+
+  @impl NimblePool
+  def handle_checkin(checkin, _from, _old_conn, pool_state) do
+    with {:ok, conn} <- checkin,
+         true <- Conn.is_open?(conn) do
+      {:ok, %{conn | last_checkin: System.monotonic_time()}, pool_state}
+    else
+      _ ->
+        Logger.debug("Error checking in socket.. removing: #{inspect(checkin)}")
+        {:remove, :closed, pool_state}
+    end
+  end
+
+  @impl NimblePool
+  def handle_update(new_conn, _old_conn, pool_state) do
+    {:ok, new_conn, pool_state}
+  end
+
+  @impl NimblePool
+  def terminate_worker(reason, conn, pool_state) do
+    Logger.debug("Terminating worker with reason: #{inspect(reason)}")
+    Conn.disconnect(conn)
+    {:ok, pool_state}
   end
 end
