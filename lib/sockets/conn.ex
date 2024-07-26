@@ -7,14 +7,12 @@ defmodule Split.Sockets.Conn do
   @type t :: %__MODULE__{
           socket: port() | nil,
           socket_path: String.t(),
-          last_checkin: integer(),
           opts: map()
         }
 
   defstruct [
     :socket,
     :socket_path,
-    :last_checkin,
     :opts
   ]
 
@@ -34,12 +32,11 @@ defmodule Split.Sockets.Conn do
     %__MODULE__{
       socket: nil,
       socket_path: socket_path,
-      last_checkin: System.monotonic_time(),
       opts: opts
     }
   end
 
-  @spec connect(t) :: {:ok, t} | {:error, term()}
+  @spec connect(t) :: {:ok, t()} | {:error, t(), term()}
   def connect(%__MODULE__{socket: nil, socket_path: socket_path} = conn) do
     case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, @default_connect_timeout) do
       {:ok, socket} ->

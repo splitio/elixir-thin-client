@@ -25,28 +25,24 @@ defmodule Split.Sockets.Pool do
     NimblePool.checkout!(
       __MODULE__,
       :checkout,
-      fn caller, {state, conn, _idle_time} ->
-        with true <- Conn.is_open?(conn),
-             {:ok, conn} <- Conn.connect(conn),
+      fn caller, {state, conn} ->
+        with {:ok, conn} <- Conn.connect(conn),
              {:ok, conn, resp} <- Conn.send_message(conn, message) do
-          {{:ok, resp}, transfer_if_open(conn, state, caller)}
+          {{:ok, resp}, update_if_open(conn, state, caller)}
         else
-          false ->
-            {{:error, :closed}, :closed}
-
           {:error, conn, error} ->
-            {{:error, error}, transfer_if_open(conn, state, caller)}
+            {{:error, error}, update_if_open(conn, state, caller)}
         end
       end,
       checkout_timeout
     )
   end
 
-  defp transfer_if_open(conn, state, {pid, _} = caller) do
+  defp update_if_open(conn, state, caller) do
     if Conn.is_open?(conn) do
-      if state == :fresh do
+      if state == :new do
         NimblePool.update(caller, conn)
-        {:ok, ^conn} = Conn.transfer_ownership(conn, pid)
+        {:ok, conn}
       else
         {:ok, conn}
       end
@@ -73,15 +69,12 @@ defmodule Split.Sockets.Pool do
 
   @impl NimblePool
   def handle_checkout(:checkout, _from, %{socket: nil} = conn, pool_state) do
-    idle_time = System.monotonic_time() - conn.last_checkin
-    {:ok, {:fresh, conn, idle_time}, conn, pool_state}
+    {:ok, {:new, conn}, conn, pool_state}
   end
 
   def handle_checkout(:checkout, _from, conn, pool_state) do
-    idle_time = System.monotonic_time() - conn.last_checkin
-
     if Conn.is_open?(conn) do
-      {:ok, {:reused, conn, idle_time}, conn, pool_state}
+      {:ok, {:reused, conn}, conn, pool_state}
     else
       {:remove, :closed, pool_state}
     end
@@ -91,10 +84,10 @@ defmodule Split.Sockets.Pool do
   def handle_checkin(checkin, _from, _old_conn, pool_state) do
     with {:ok, conn} <- checkin,
          true <- Conn.is_open?(conn) do
-      {:ok, %{conn | last_checkin: System.monotonic_time()}, pool_state}
+      {:ok, conn, pool_state}
     else
       _ ->
-        Logger.debug("Error checking in socket.. removing: #{inspect(checkin)}")
+        Logger.debug("Error checking in socket #{inspect(checkin)} to the pool. removing...")
         {:remove, :closed, pool_state}
     end
   end
