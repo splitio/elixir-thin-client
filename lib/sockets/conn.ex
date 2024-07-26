@@ -21,7 +21,7 @@ defmodule Split.Sockets.Conn do
   @connect_opts [
     mode: :binary,
     active: false,
-    packet: :raw,
+    packet: 0,
     nodelay: true
   ]
 
@@ -68,10 +68,9 @@ defmodule Split.Sockets.Conn do
   end
 
   def send_message(conn, message) do
-    packed_message = Msgpax.pack!(message, iodata: false)
+    message = Msgpax.pack!(message, iodata: false)
 
-    payload =
-      <<byte_size(packed_message)::integer-unsigned-little-size(32), packed_message::binary>>
+    payload = [<<byte_size(message)::integer-unsigned-little-size(32)>>, message]
 
     with :ok <- :gen_tcp.send(conn.socket, payload),
          {:ok, <<response_size::little-unsigned-size(32)>>} <-
