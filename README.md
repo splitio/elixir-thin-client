@@ -1,7 +1,5 @@
 # SplitThinElixir
 
-**TODO: Add description**
-
 ## Getting Started
 
 A step-by-step guide on how to integrate the Split.io thin client for Elixir into your app.
@@ -18,6 +16,32 @@ def deps do
   ]
 end
 ```
+
+After adding the dependency, run `mix deps.get` to fetch the new dependency.
+
+### Usage
+
+In order to use the Split Thin Client, you must start the [Split Daemon (splitd)](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd).
+
+Then you can start the Elixir Split Thin Client, either in your supervision tree:
+
+```elixir
+children = [
+  {Split, opts}
+]
+```
+
+Or by starting it manually:
+
+```elixir
+Split.start_link(opts)
+```
+
+Where `opts` is a keyword list with the following options:
+
+- `:socket_path` - The path to the splitd socket file. For example `/var/run/splitd.sock`.
+
+Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon.
 
 ## Testing
 
