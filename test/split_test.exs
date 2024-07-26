@@ -13,7 +13,7 @@ defmodule SplitThinElixirTest do
        worker: {Pool, %{socket_path: "/tmp/elixir-splitd.sock"}},
        name: Pool,
        lazy: false,
-       pool_size: 1}
+       pool_size: 10}
 
     {:ok, _pid} = Supervisor.start_link([child], strategy: :one_for_one, restart: :transient)
     :ok
