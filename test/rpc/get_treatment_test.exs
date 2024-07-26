@@ -38,7 +38,7 @@ defmodule Split.RPC.GetTreatmentTest do
 
   describe "parse_response/1" do
     test "returns {:ok, %{treatment: treatment}}" do
-      response = %{"s" => 1, "p" => %{"t" => "treatment"}}
+      response = {:ok, %{"s" => 1, "p" => %{"t" => "treatment"}}}
 
       assert {:ok, %Split.Treatment{treatment: "treatment"}} =
                GetTreatment.parse_response(response, [])

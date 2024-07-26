@@ -15,21 +15,23 @@ defmodule Split.RPC.SplitTest do
 
   describe "parse_response/1" do
     test "returns {:ok, %{treatment: treatment}}" do
-      response = %{
-        "s" => 1,
-        "p" => %{
-          "n" => %{
-            "n" => "test-split",
-            "t" => "traffic_type",
-            "k" => false,
-            "s" => ["on", "off"],
-            "c" => 12345,
-            "f" => %{"on" => "foo"},
-            "d" => "default_treatment",
-            "e" => ["flag_set"]
-          }
-        }
-      }
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "n" => %{
+               "n" => "test-split",
+               "t" => "traffic_type",
+               "k" => false,
+               "s" => ["on", "off"],
+               "c" => 12345,
+               "f" => %{"on" => "foo"},
+               "d" => "default_treatment",
+               "e" => ["flag_set"]
+             }
+           }
+         }}
 
       assert {:ok,
               %Split{

@@ -39,7 +39,7 @@ defmodule Split.RPC.GetTreatmentWithConfigTest do
 
   describe "parse_response/1" do
     test "returns {:ok, %{treatment: treatment}}" do
-      response = %{"s" => 1, "p" => %{"t" => "treatment", "c" => %{"foo" => "bar"}}}
+      response = {:ok, %{"s" => 1, "p" => %{"t" => "treatment", "c" => %{"foo" => "bar"}}}}
 
       assert {:ok, %Treatment{treatment: "treatment", config: %{"foo" => "bar"}}} =
                GetTreatmentWithConfig.parse_response(response, [])

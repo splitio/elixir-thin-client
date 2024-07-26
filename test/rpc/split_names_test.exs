@@ -15,7 +15,7 @@ defmodule Split.RPC.SplitNamesTest do
 
   describe "parse_response/1" do
     test "returns {:ok, %{treatment: treatment}}" do
-      response = %{"s" => 1, "p" => %{"n" => ["split_name"]}}
+      response = {:ok, %{"s" => 1, "p" => %{"n" => ["split_name"]}}}
       assert {:ok, %{split_names: ["split_name"]}} == SplitNames.parse_response(response)
     end
 
