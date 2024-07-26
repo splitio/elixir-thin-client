@@ -30,16 +30,6 @@ defmodule Split.RPC do
     end)
   end
 
-  def generate_cache_key(opts) do
-    sorted_attribute_binary = opts[:attributes] |> Enum.sort() |> :erlang.term_to_binary()
-    user_key = opts[:user_key]
-    feature_name = opts[:feature_name]
-
-    "#{user_key}#{feature_name}#{sorted_attribute_binary}"
-    |> :erlang.crc32()
-    |> then(&"split_sdk_cache-#{&1}")
-  end
-
   def execute_rpc(rpc, opts) do
     :telemetry.span([:split, :rpc], %{rpc: inspect(rpc)}, fn ->
       opts

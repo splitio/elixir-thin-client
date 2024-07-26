@@ -24,12 +24,12 @@ defmodule Split.RPC.GetTreatmentWithConfig do
   end
 
   @impl Split.RPC
-  @spec parse_response(map(), Keyword.t()) :: {:ok, Treatment.t()} | {:error, map()}
-  def parse_response(%{"s" => 1, "p" => treatment_payload}, _) do
+  @spec parse_response({:ok, map()}, Keyword.t()) :: {:ok, Treatment.t()} | {:error, term()}
+  def parse_response({:ok, %{"s" => 1, "p" => treatment_payload}}, _) do
     {:ok, Treatment.build_from_daemon_response(treatment_payload)}
   end
 
-  def parse_response(response, _) do
-    {:error, response}
+  def parse_response({:error, _reason} = response, _) do
+    response
   end
 end

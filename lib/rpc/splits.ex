@@ -10,15 +10,15 @@ defmodule Split.RPC.Splits do
     }
   end
 
-  @spec parse_response(map()) :: {:ok, [Split.t()]} | {:error, map()}
-  def parse_response(%{"s" => 1, "p" => %{"s" => splits}} = _response) do
+  @spec parse_response({:ok, map()}) :: {:ok, [Split.t()]} | {:error, term()}
+  def parse_response({:ok, %{"s" => 1, "p" => %{"s" => splits}}}) do
     Enum.reduce(splits, [], fn split, acc ->
       [Helpers.parse_split(split) | acc]
     end)
     |> then(&{:ok, &1})
   end
 
-  def parse_response(response) do
-    {:error, response}
+  def parse_response({:error, _reason} = response) do
+    response
   end
 end

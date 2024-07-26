@@ -15,27 +15,30 @@ defmodule Split.Sockets.Pool do
   def start_link(opts) do
     NimblePool.start_link(
       worker: {__MODULE__, opts},
-      # TODO: make this configurable
-      # pool_size: 100,
+      pool_size: Keyword.get(opts, :pool_size, 10),
       lazy: false,
-      worker_idle_timeout: 60_000
+      worker_idle_timeout: :timer.minutes(30)
     )
   end
 
-  def send_message(message) do
+  def send_message(message, checkout_timeout \\ 5_000) do
     NimblePool.checkout!(
       __MODULE__,
       :checkout,
       fn caller, {state, conn, _idle_time} ->
-        with {:ok, conn} <- Conn.connect(conn),
+        with true <- Conn.is_open?(conn),
+             {:ok, conn} <- Conn.connect(conn),
              {:ok, conn, resp} <- Conn.send_message(conn, message) do
           {{:ok, resp}, transfer_if_open(conn, state, caller)}
         else
+          false ->
+            {{:error, :closed}, :closed}
+
           {:error, conn, error} ->
             {{:error, error}, transfer_if_open(conn, state, caller)}
         end
       end,
-      5_000
+      checkout_timeout
     )
   end
 
@@ -54,16 +57,18 @@ defmodule Split.Sockets.Pool do
 
   @impl NimblePool
   def init_pool(%{socket_path: socket_path} = opts) do
-    if File.exists?(socket_path) do
-      {:ok, opts}
-    else
-      {:stop, :socket_not_found}
-    end
+    Logger.error("""
+    Failed to start Split SDK socket pool. The socket was not found at #{socket_path}.
+
+    This is likely because the Splitd daemon is not running. Please start the daemon and try again.
+    """)
+
+    {:ok, opts}
   end
 
   @impl NimblePool
-  def init_worker(%{socket_path: socket_path} = pool_state) do
-    {:ok, Conn.new(socket_path, []), pool_state}
+  def init_worker(%{socket_path: socket_path} = opts) do
+    {:ok, Conn.new(socket_path, opts), opts}
   end
 
   @impl NimblePool

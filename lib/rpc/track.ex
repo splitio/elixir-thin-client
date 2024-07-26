@@ -14,12 +14,12 @@ defmodule Split.RPC.Track do
     }
   end
 
-  @spec parse_response(map()) :: :ok | :error
-  def parse_response(%{"s" => 1, "p" => %{"s" => true}}) do
+  @spec parse_response({:ok, map()}) :: :ok | :error
+  def parse_response({:ok, %{"s" => 1, "p" => %{"s" => true}}}) do
     :ok
   end
 
-  def parse_response(_) do
+  def parse_response({:error, _reason} = _response) do
     :error
   end
 end

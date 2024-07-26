@@ -8,7 +8,7 @@ defmodule Split.Sockets.Conn do
           socket: port() | nil,
           socket_path: String.t(),
           last_checkin: integer(),
-          opts: Keyword.t()
+          opts: map()
         }
 
   defstruct [
@@ -27,9 +27,10 @@ defmodule Split.Sockets.Conn do
 
   @default_connect_timeout 1_000
   @default_rcv_timeout 1_000
+  @client_id "Splitd_Elixir-" <> to_string(Application.spec(:split, :vsn))
 
-  @spec new(String.t(), Keyword.t()) :: t
-  def new(socket_path, opts \\ []) do
+  @spec new(String.t(), map()) :: t
+  def new(socket_path, opts \\ %{}) do
     %__MODULE__{
       socket: nil,
       socket_path: socket_path,
@@ -42,15 +43,16 @@ defmodule Split.Sockets.Conn do
   def connect(%__MODULE__{socket: nil, socket_path: socket_path} = conn) do
     case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, @default_connect_timeout) do
       {:ok, socket} ->
-        # :ok = :gen_tcp.controlling_process(socket, parent)
         conn = %{conn | socket: socket}
 
-        # TODO: If we cannot register we should close the socket and return an error
-        {:ok, conn, _resp} = send_message(conn, Split.RPC.Register.build())
+        case send_message(conn, registration_message()) do
+          {:ok, _conn, _resp} ->
+            {:ok, conn}
 
-        # |> Split.RPC.Register.parse_response()
-
-        {:ok, conn}
+          {:error, _conn, reason} ->
+            Logger.error("Error sending registration message: #{inspect(reason)}")
+            {:error, %{conn | socket: nil}, reason}
+        end
 
       {:error, reason} ->
         Logger.error("Error establishing socket connection: #{inspect(reason)}")
@@ -60,6 +62,14 @@ defmodule Split.Sockets.Conn do
 
   def connect(conn) do
     {:ok, conn}
+  end
+
+  defp registration_message() do
+    %{
+      "v" => 1,
+      "o" => 0x00,
+      "a" => ["123", @client_id, 1]
+    }
   end
 
   @spec send_message(t(), term()) :: {:ok, t(), term()} | {:error, t(), term()}
