@@ -39,15 +39,12 @@ defmodule Split.Test.MockSplitdServer do
         client
       ])
 
-    # :ok = :gen_tcp.controlling_process(socket, pid)
-
     loop_acceptor(socket)
   end
 
   def serve(client) do
     case :gen_tcp.recv(client, 0) do
       {:ok, data} ->
-        # <<_::integer-unsigned-little-size(32), payload::binary>> = data
         payload = Enum.slice(data, 4..-1//1)
         unpacked_payload = Msgpax.unpack!(payload)
 
