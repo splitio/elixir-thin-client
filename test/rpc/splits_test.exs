@@ -51,8 +51,8 @@ defmodule Split.RPC.SplitsTest do
     end
 
     test "returns {:error, response}" do
-      response = %{"s" => 0}
-      assert {:error, %{"s" => 0}} == Splits.parse_response(response)
+      response = {:error, :closed}
+      assert response == Splits.parse_response(response)
     end
   end
 end

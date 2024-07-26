@@ -20,16 +20,14 @@ defmodule Split.RPC.SplitTest do
          %{
            "s" => 1,
            "p" => %{
-             "n" => %{
-               "n" => "test-split",
-               "t" => "traffic_type",
-               "k" => false,
-               "s" => ["on", "off"],
-               "c" => 12345,
-               "f" => %{"on" => "foo"},
-               "d" => "default_treatment",
-               "e" => ["flag_set"]
-             }
+             "n" => "test-split",
+             "t" => "traffic_type",
+             "k" => false,
+             "s" => ["on", "off"],
+             "c" => 12345,
+             "f" => %{"on" => "foo"},
+             "d" => "default_treatment",
+             "e" => ["flag_set"]
            }
          }}
 
@@ -47,8 +45,8 @@ defmodule Split.RPC.SplitTest do
     end
 
     test "returns {:error, response}" do
-      response = %{"s" => 0}
-      assert {:error, %{"s" => 0}} == SplitRPC.parse_response(response)
+      response = {:error, :closed}
+      assert response == SplitRPC.parse_response(response)
     end
   end
 end

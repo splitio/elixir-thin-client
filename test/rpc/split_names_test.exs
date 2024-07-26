@@ -20,8 +20,8 @@ defmodule Split.RPC.SplitNamesTest do
     end
 
     test "returns {:error, response}" do
-      response = %{"s" => 0}
-      assert {:error, %{"s" => 0}} == SplitNames.parse_response(response)
+      response = {:error, :closed}
+      assert response == SplitNames.parse_response(response)
     end
   end
 end
