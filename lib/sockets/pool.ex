@@ -15,7 +15,7 @@ defmodule Split.Sockets.Pool do
   def start_link(opts) do
     NimblePool.start_link(
       worker: {__MODULE__, opts},
-      pool_size: Keyword.get(opts, :pool_size, 10),
+      pool_size: Map.get(opts, :pool_size, 10),
       lazy: false,
       worker_idle_timeout: :timer.minutes(30)
     )
