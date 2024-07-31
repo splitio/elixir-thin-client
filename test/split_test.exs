@@ -6,8 +6,6 @@ defmodule SplitThinElixirTest do
   alias Split.Treatment
 
   setup_all do
-    start_supervised!({Split.Test.MockSplitdServer, []})
-
     start_supervised!(
       {NimblePool,
        worker: {Pool, %{socket_path: "/tmp/elixir-splitd.sock"}}, name: Pool, pool_size: 10}
