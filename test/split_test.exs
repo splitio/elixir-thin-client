@@ -8,14 +8,11 @@ defmodule SplitThinElixirTest do
   setup_all do
     start_supervised!({Split.Test.MockSplitdServer, []})
 
-    child =
+    start_supervised!(
       {NimblePool,
-       worker: {Pool, %{socket_path: "/tmp/elixir-splitd.sock"}},
-       name: Pool,
-       lazy: false,
-       pool_size: 10}
+       worker: {Pool, %{socket_path: "/tmp/elixir-splitd.sock"}}, name: Pool, pool_size: 10}
+    )
 
-    {:ok, _pid} = Supervisor.start_link([child], strategy: :one_for_one, restart: :transient)
     :ok
   end
 

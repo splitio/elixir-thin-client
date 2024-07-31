@@ -103,4 +103,9 @@ defmodule Split.Sockets.Pool do
     Conn.disconnect(conn)
     {:ok, pool_state}
   end
+
+  @impl NimblePool
+  def handle_ping(_conn, _pool_state) do
+    {:stop, :idle_timeout}
+  end
 end
