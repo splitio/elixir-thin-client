@@ -54,11 +54,13 @@ defmodule Split.Sockets.Pool do
 
   @impl NimblePool
   def init_pool(%{socket_path: socket_path} = opts) do
-    Logger.error("""
-    Failed to start Split SDK socket pool. The socket was not found at #{socket_path}.
+    unless File.exists?(socket_path) do
+      Logger.error("""
+      The Split Daemon (splitd) socket was not found at #{socket_path}.
 
-    This is likely because the Splitd daemon is not running. Please start the daemon and try again.
-    """)
+      This is likely because the Splitd daemon is not running.
+      """)
+    end
 
     {:ok, opts}
   end
