@@ -17,7 +17,8 @@ defmodule Split.Sockets.Pool do
       worker: {__MODULE__, opts},
       pool_size: Map.get(opts, :pool_size, 10),
       lazy: false,
-      worker_idle_timeout: :timer.minutes(30)
+      worker_idle_timeout: :timer.minutes(30),
+      name: __MODULE__
     )
   end
 
