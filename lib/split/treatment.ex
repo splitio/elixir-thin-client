@@ -31,4 +31,12 @@ defmodule Split.Treatment do
       timestamp: timestamp
     }
   end
+
+  @spec fallback_response() :: map()
+  def fallback_response() do
+    %{
+      "s" => 1,
+      "p" => %{"t" => "control", "c" => nil, "l" => %{"l" => nil, "c" => nil, "m" => nil}}
+    }
+  end
 end

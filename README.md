@@ -1,10 +1,12 @@
 # SplitThinElixir
 
-**TODO: Add description**
+## Getting Started
 
-## Installation
+A step-by-step guide on how to integrate the Split.io thin client for Elixir into your app.
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
+### Installing from Hex.pm
+
+The Split Elixir thin client is publisehd as a package in hex.pm. It can be installed
 by adding `split_thin_elixir` to your list of dependencies in `mix.exs`:
 
 ```elixir
@@ -15,7 +17,39 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/split_thin_elixir>.
+After adding the dependency, run `mix deps.get` to fetch the new dependency.
 
+### Usage
+
+In order to use the Split Thin Client, you must start the [Split Daemon (splitd)](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd).
+
+Then you can start the Elixir Split Thin Client, either in your supervision tree:
+
+```elixir
+children = [
+  {Split, opts}
+]
+```
+
+Or by starting it manually:
+
+```elixir
+Split.start_link(opts)
+```
+
+Where `opts` is a keyword list with the following options:
+
+- `:socket_path` - The path to the splitd socket file. For example `/var/run/splitd.sock`.
+
+Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon.
+
+## Testing
+
+### Running splitd for integration testing
+
+There is a convenience makefile target to run `splitd` for integration testing. This is useful to test the client against a real split server. You will need to export the `SPLIT_API_KEY` environment variable exported in your shell to run splitd:
+
+```sh
+export SPLIT_API_KEY=your-api-key
+make start_splitd
+```

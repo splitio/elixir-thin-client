@@ -1,4 +1,7 @@
 defmodule Split.RPC.GetTreatment do
+  @doc """
+  A treatment represents the result of an Experiment/Feature evaluation.
+  """
   alias Split.Treatment
 
   @behaviour Split.RPC
@@ -24,13 +27,13 @@ defmodule Split.RPC.GetTreatment do
   end
 
   @impl Split.RPC
-  @spec parse_response(map(), Keyword.t()) :: {:ok, map()} | {:error, map()}
-  def parse_response(%{"s" => 1, "p" => treatment}, _) do
+  @spec parse_response({:ok, map()}, Keyword.t()) :: {:ok, Treatment.t()} | {:error, term()}
+  def parse_response({:ok, %{"s" => 1, "p" => treatment}} = _resp, _) do
     treatment = Treatment.build_from_daemon_response(treatment)
     {:ok, treatment}
   end
 
-  def parse_response(response, _) do
-    {:error, response}
+  def parse_response({:error, _reason} = response, _) do
+    response
   end
 end

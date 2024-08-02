@@ -8,12 +8,12 @@ defmodule Split.RPC.SplitNames do
     }
   end
 
-  @spec parse_response(map()) :: {:ok, map()} | {:error, map()}
-  def parse_response(%{"s" => 1, "p" => %{"n" => split_names}} = _response) do
+  @spec parse_response({:ok, map()}) :: {:ok, map()} | {:error, term()}
+  def parse_response({:ok, %{"s" => 1, "p" => %{"n" => split_names}}}) do
     {:ok, %{split_names: split_names}}
   end
 
-  def parse_response(response) do
-    {:error, response}
+  def parse_response({:error, _reason} = response) do
+    response
   end
 end

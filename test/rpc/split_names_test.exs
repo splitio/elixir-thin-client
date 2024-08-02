@@ -15,13 +15,13 @@ defmodule Split.RPC.SplitNamesTest do
 
   describe "parse_response/1" do
     test "returns {:ok, %{treatment: treatment}}" do
-      response = %{"s" => 1, "p" => %{"n" => ["split_name"]}}
+      response = {:ok, %{"s" => 1, "p" => %{"n" => ["split_name"]}}}
       assert {:ok, %{split_names: ["split_name"]}} == SplitNames.parse_response(response)
     end
 
     test "returns {:error, response}" do
-      response = %{"s" => 0}
-      assert {:error, %{"s" => 0}} == SplitNames.parse_response(response)
+      response = {:error, :closed}
+      assert response == SplitNames.parse_response(response)
     end
   end
 end

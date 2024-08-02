@@ -1,4 +1,7 @@
 defmodule Split.RPC.Split do
+  @moduledoc """
+  A split represents an Experiment/Feature in Split.io.
+  """
   alias Split.RPC.Helpers
 
   @spec build(String.t()) :: map()
@@ -10,12 +13,12 @@ defmodule Split.RPC.Split do
     }
   end
 
-  @spec parse_response(map()) :: {:ok, Split.t()} | {:error, map()}
-  def parse_response(%{"s" => 1, "p" => %{"n" => payload}} = _response) do
+  @spec parse_response({:ok, map()}) :: {:ok, Split.t()} | {:error, term()}
+  def parse_response({:ok, %{"s" => 1, "p" => payload}}) do
     {:ok, Helpers.parse_split(payload)}
   end
 
-  def parse_response(response) do
-    {:error, response}
+  def parse_response({:error, _reason} = response) do
+    response
   end
 end

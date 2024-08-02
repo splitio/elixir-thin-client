@@ -8,8 +8,7 @@ defmodule Split.Sockets.Supervisor do
   end
 
   def start_link(opts) do
-    # opts = Keyword.merge([name: Pool], opts)
-    # child = {NimblePool, worker: {Pool, opts}, name: Pool, lazy: false}
-    Supervisor.start_link([Pool], opts)
+    child = {NimblePool, worker: {Pool, opts}, name: Pool}
+    Supervisor.start_link([child], strategy: :one_for_one)
   end
 end
