@@ -13,16 +13,21 @@ defmodule Split.Sockets.Pool do
   end
 
   def start_link(opts) do
+    fallback_enabled = Map.get(opts, :fallback_enabled, false)
+    :persistent_term.put(:splitd_fallback_enabled, fallback_enabled)
+    opts = Map.put_new(opts, :fallback_enabled, fallback_enabled)
+    default_pool_size = System.schedulers_online()
+
     NimblePool.start_link(
       worker: {__MODULE__, opts},
-      pool_size: Map.get(opts, :pool_size, 10),
+      pool_size: Map.get(opts, :pool_size, default_pool_size),
       lazy: false,
       worker_idle_timeout: :timer.minutes(30),
       name: __MODULE__
     )
   end
 
-  def send_message(message, checkout_timeout \\ 5_000) do
+  def send_message(message, checkout_timeout \\ 100) do
     NimblePool.checkout!(
       __MODULE__,
       :checkout,

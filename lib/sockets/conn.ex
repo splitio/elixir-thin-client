@@ -1,8 +1,10 @@
 defmodule Split.Sockets.Conn do
   @moduledoc """
-  Represents a socket connection to the Splitd daemon.
+  Represents a TCP socket connection to the Splitd daemon.
   """
   require Logger
+  alias Split.RPC.Message
+  alias Split.RPC.Encoder
 
   @type t :: %__MODULE__{
           socket: port() | nil,
@@ -23,9 +25,8 @@ defmodule Split.Sockets.Conn do
     nodelay: true
   ]
 
-  @default_connect_timeout 1_000
-  @default_rcv_timeout 1_000
-  @client_id "Splitd_Elixir-" <> to_string(Application.spec(:split, :vsn))
+  @default_connect_timeout 500
+  @default_rcv_timeout 500
 
   @spec new(String.t(), map()) :: t
   def new(socket_path, opts \\ %{}) do
@@ -42,7 +43,7 @@ defmodule Split.Sockets.Conn do
       {:ok, socket} ->
         conn = %{conn | socket: socket}
 
-        case send_message(conn, registration_message()) do
+        case send_message(conn, Message.register()) do
           {:ok, _conn, _resp} ->
             {:ok, conn}
 
@@ -61,23 +62,13 @@ defmodule Split.Sockets.Conn do
     {:ok, conn}
   end
 
-  defp registration_message() do
-    %{
-      "v" => 1,
-      "o" => 0x00,
-      "a" => ["123", @client_id, 1]
-    }
-  end
-
   @spec send_message(t(), term()) :: {:ok, t(), term()} | {:error, t(), term()}
   def send_message(%__MODULE__{socket: nil} = conn, _message) do
     {:error, conn, :socket_disconnected}
   end
 
   def send_message(conn, message) do
-    message = Msgpax.pack!(message, iodata: false)
-
-    payload = [<<byte_size(message)::integer-unsigned-little-size(32)>>, message]
+    payload = Encoder.encode(message)
 
     with :ok <- :gen_tcp.send(conn.socket, payload),
          {:ok, <<response_size::little-unsigned-size(32)>>} <-

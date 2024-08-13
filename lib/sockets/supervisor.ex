@@ -8,7 +8,7 @@ defmodule Split.Sockets.Supervisor do
   end
 
   def start_link(opts) do
-    child = {NimblePool, worker: {Pool, opts}, name: Pool}
+    child = {Pool, opts}
     Supervisor.start_link([child], strategy: :one_for_one)
   end
 end
