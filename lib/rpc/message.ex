@@ -45,7 +45,7 @@ defmodule Split.RPC.Message do
   @type t :: %__MODULE__{
           v: protocol_version(),
           o: opcode(),
-          a: [term(), ...]
+          a: [term()]
         }
 
   @doc """
