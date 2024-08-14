@@ -61,7 +61,7 @@ defmodule Stplit.RPC.ResponseParser do
 
   def parse_response(response, request) do
     if :persistent_term.get(:splitd_fallback_enabled) do
-      {:ok, Fallback.fallback(request)}
+      Fallback.fallback(request)
     else
       response
     end
