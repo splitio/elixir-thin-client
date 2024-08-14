@@ -2,14 +2,11 @@ defmodule SplitThinElixirTest do
   use ExUnit.Case
 
   alias Split.Impression
-  alias Split.Sockets.Pool
+  alias Split.Sockets.Supervisor
   alias Split.Treatment
 
   setup_all do
-    start_supervised!(
-      {NimblePool,
-       worker: {Pool, %{socket_path: "/tmp/elixir-splitd.sock"}}, name: Pool, pool_size: 10}
-    )
+    start_supervised!({Supervisor, %{socket_path: "/tmp/elixir-splitd.sock"}})
 
     :ok
   end
