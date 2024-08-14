@@ -10,6 +10,35 @@ defmodule Split.RPC.Fallback do
   alias Split.RPC.Message
   alias Split.Treatment
 
+  @doc """
+  Provides a default value for the given RPC message.
+
+  ## Examples
+
+      iex> Fallback.fallback(%Message{o: 0x11})
+      {:ok, %Treatment{treatment: "control"}}
+
+      iex> Fallback.fallback(%Message{o: 0x13})
+      {:ok, %Treatment{treatment: "control", config: nil}}
+
+      iex> Fallback.fallback(%Message{o: 0x12, a: ["user_key", "bucketing_key", ["feature_1", "feature_2"], %{}]})
+      {:ok, %{"feature_1" => %Treatment{treatment: "control"}, "feature_2" => %Treatment{treatment: "control"}}}
+
+      iex> Fallback.fallback(%Message{o: 0x14, a: ["user_key", "bucketing_key", ["feature_a"], %{}]})
+      {:ok, %{"feature_a" => %Treatment{treatment: "control", config: nil}}}
+
+      iex> Fallback.fallback(%Message{o: 0xA1})
+      {:ok, nil}
+
+      iex> Fallback.fallback(%Message{o: 0xA2})
+      {:ok, []}
+
+      iex> Fallback.fallback(%Message{o: 0xA0})
+      {:ok, %{split_names: []}}
+
+      iex> Fallback.fallback(%Message{o: 0x80})
+      :ok
+  """
   def fallback(%Message{o: opcode})
       when opcode in [@get_treatment_opcode, @get_treatment_with_config_opcode] do
     {:ok, %Treatment{}}
@@ -41,9 +70,5 @@ defmodule Split.RPC.Fallback do
 
   def fallback(%Message{o: @track_opcode}) do
     :ok
-  end
-
-  def fallback(%Message{o: opcode}) do
-    {:error, "Unknown opcode: #{opcode}"}
   end
 end

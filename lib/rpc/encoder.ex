@@ -9,11 +9,12 @@ defmodule Split.RPC.Encoder do
 
   ## Examples
 
-      iex> Split.RPC.Encoder.encode(%Split.RPC.Message{v: 1, o: 0xA1, a: ["split_name"]})
-      [
-        <<22, 0, 0, 0>>,
-        <<131, 161, 111, 204, 161, 161, 97, 145, 170, 115, 112, 108, 105, 116, 95, 110, 97, 109, 101, 161, 118, 1>>
-      ]
+      iex> message = Split.RPC.Message.split("test_split")
+      iex> [size, encoded] = Split.RPC.Encoder.encode(message)
+      iex> size == <<byte_size(encoded)::integer-unsigned-little-size(32)>>
+      iex> Msgpax.unpack!(encoded)
+
+      %{"a" => ["test_split"], "o" => 161, "v" => 1}
   """
   @spec encode(Message.t()) :: iodata()
   def encode(message) do
