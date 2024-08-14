@@ -29,8 +29,7 @@ defmodule SplitThinElixir.MixProject do
       # Dev and test dependencies
       {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
-      {:mimic, "~> 1.7", only: :test}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
     ]
   end
 
