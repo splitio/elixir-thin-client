@@ -2,7 +2,7 @@ defmodule Stplit.RPC.ResponseParser do
   @moduledoc """
   Parses the response from the Split.io API.
   """
-  use Split.RPC.MessageType
+  use Split.RPC.Opcodes
 
   alias Split.RPC.Fallback
   alias Split.RPC.Message

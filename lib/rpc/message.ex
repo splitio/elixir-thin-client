@@ -1,40 +1,13 @@
-defmodule Split.RPC.MessageType do
-  defmacro __using__(_) do
-    quote do
-      @register_opcode 0x00
-      @get_treatment_opcode 0x11
-      @get_treatments_opcode 0x12
-      @get_treatment_with_config_opcode 0x13
-      @get_treatments_with_config_opcode 0x14
-      @split_opcode 0xA1
-      @splits_opcode 0xA2
-      @split_names_opcode 0xA0
-      @track_opcode 0x80
-
-      @message_type [
-        @get_treatment_opcode,
-        @get_treatment_with_config_opcode,
-        @get_treatments_opcode,
-        @get_treatments_with_config_opcode,
-        @split_opcode,
-        @splits_opcode,
-        @split_names_opcode,
-        @track_opcode
-      ]
-    end
-  end
-end
-
 defmodule Split.RPC.Message do
   @doc """
-  Represents an IPC message to be sent to splitd.
+  Represents an RPC message to be sent to splitd.
   """
-  use Split.RPC.MessageType
+  use Split.RPC.Opcodes
 
   @protocol_version 0x01
   @client_id "Splitd_Elixir-" <> to_string(Application.spec(:split, :vsn))
 
-  @type opcode :: unquote(Enum.reduce(@message_type, &{:|, [], [&1, &2]}))
+  @type opcode :: unquote(Enum.reduce(@opcodes, &{:|, [], [&1, &2]}))
   @typep protocol_version :: unquote(@protocol_version)
 
   @derive [{Msgpax.Packer, fields: [:v, :o, :a]}]
