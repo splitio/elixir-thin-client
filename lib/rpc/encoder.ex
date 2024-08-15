@@ -9,10 +9,9 @@ defmodule Split.RPC.Encoder do
 
   ## Examples
 
-      iex> message = Split.RPC.Message.split("test_split")
-      iex> [size, encoded] = Split.RPC.Encoder.encode(message)
-      iex> size == <<byte_size(encoded)::integer-unsigned-little-size(32)>>
-      iex> Msgpax.unpack!(encoded)
+      iex> message = Message.split("test_split")
+      ...> [_size, encoded] = Encoder.encode(message)
+      ...> Msgpax.unpack!(encoded)
 
       %{"a" => ["test_split"], "o" => 161, "v" => 1}
   """

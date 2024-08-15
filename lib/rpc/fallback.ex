@@ -21,8 +21,15 @@ defmodule Split.RPC.Fallback do
       iex> Fallback.fallback(%Message{o: 0x13})
       {:ok, %Treatment{treatment: "control", config: nil}}
 
-      iex> Fallback.fallback(%Message{o: 0x12, a: ["user_key", "bucketing_key", ["feature_1", "feature_2"], %{}]})
-      {:ok, %{"feature_1" => %Treatment{treatment: "control"}, "feature_2" => %Treatment{treatment: "control"}}}
+      iex> Fallback.fallback(%Message{
+      ...>   o: 0x12,
+      ...>   a: ["user_key", "bucketing_key", ["feature_1", "feature_2"], %{}]
+      ...> })
+      {:ok,
+       %{
+         "feature_1" => %Treatment{treatment: "control"},
+         "feature_2" => %Treatment{treatment: "control"}
+       }}
 
       iex> Fallback.fallback(%Message{o: 0x14, a: ["user_key", "bucketing_key", ["feature_a"], %{}]})
       {:ok, %{"feature_a" => %Treatment{treatment: "control", config: nil}}}

@@ -95,7 +95,10 @@ defmodule Split.Sockets.Pool do
       {:ok, conn, pool_state}
     else
       _ ->
-        Logger.debug("Error checking in socket #{inspect(checkin)} to the pool. removing...")
+        Logger.debug(
+          "Error checking in socket #{inspect(checkin)} to the pool. Socket is closed."
+        )
+
         {:remove, :closed, pool_state}
     end
   end

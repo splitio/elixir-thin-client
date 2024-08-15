@@ -25,8 +25,9 @@ defmodule Split.Sockets.Conn do
     nodelay: true
   ]
 
-  @default_connect_timeout 500
-  @default_rcv_timeout 500
+  # Timeout values are the same defaults used by Splitd
+  @default_connect_timeout 1000
+  @default_rcv_timeout 1000
 
   @spec new(String.t(), map()) :: t
   def new(socket_path, opts \\ %{}) do
