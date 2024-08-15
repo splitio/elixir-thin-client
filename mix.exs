@@ -27,7 +27,6 @@ defmodule SplitThinElixir.MixProject do
       {:nimble_pool, "~> 1.0"},
       {:telemetry, "~> 1.0"},
       # Dev and test dependencies
-      {:mix_test_watch, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.21", only: :dev, runtime: false}
     ]
