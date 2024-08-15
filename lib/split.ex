@@ -112,7 +112,7 @@ defmodule Split do
 
   defp execute_rpc(request) do
     metadata = %{
-      rpc: to_string(request.__struct__)
+      rpc_call: Message.opcode_to_rpc_name(request.o)
     }
 
     :telemetry.span([:split, :rpc], metadata, fn ->

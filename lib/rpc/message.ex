@@ -180,6 +180,45 @@ defmodule Split.RPC.Message do
     }
   end
 
+  @doc """
+  Converts an opcode to the corresponding RPC call name.
+
+  ## Examples
+
+    iex> Message.opcode_to_rpc_name(@get_treatment_opcode)
+    :get_treatment
+
+    iex> Message.opcode_to_rpc_name(@get_treatment_with_config_opcode)
+    :get_treatment_with_config
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_opcode)
+    :get_treatments
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_with_config_opcode)
+    :get_treatments_with_config
+
+    iex> Message.opcode_to_rpc_name(@split_opcode)
+    :split
+
+    iex> Message.opcode_to_rpc_name(@splits_opcode)
+    :splits
+
+    iex> Message.opcode_to_rpc_name(@split_names_opcode)
+    :split_names
+
+    iex> Message.opcode_to_rpc_name(@track_opcode)
+    :track
+  """
+  @spec opcode_to_rpc_name(opcode()) :: atom
+  def opcode_to_rpc_name(@get_treatment_opcode), do: :get_treatment
+  def opcode_to_rpc_name(@get_treatments_opcode), do: :get_treatments
+  def opcode_to_rpc_name(@get_treatment_with_config_opcode), do: :get_treatment_with_config
+  def opcode_to_rpc_name(@get_treatments_with_config_opcode), do: :get_treatments_with_config
+  def opcode_to_rpc_name(@split_opcode), do: :split
+  def opcode_to_rpc_name(@splits_opcode), do: :splits
+  def opcode_to_rpc_name(@split_names_opcode), do: :split_names
+  def opcode_to_rpc_name(@track_opcode), do: :track
+
   defp treatment_payload(data, opcode, opts \\ []) do
     features_key =
       if Keyword.get(opts, :multiple, false), do: :feature_names, else: :feature_name
