@@ -329,7 +329,7 @@ defmodule Split.RPC.ResponseParserTest do
 
   describe "parse_response/2 with fallback enabled" do
     setup do
-      old_value = :persistent_term.get(:splitd_fallback_enabled)
+      old_value = :persistent_term.get(:splitd_fallback_enabled, false)
       :persistent_term.put(:splitd_fallback_enabled, true)
       on_exit(fn -> :persistent_term.put(:splitd_fallback_enabled, old_value) end)
     end
