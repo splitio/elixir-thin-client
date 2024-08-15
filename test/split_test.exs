@@ -1,5 +1,5 @@
 defmodule SplitThinElixirTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case
 
   alias Split.Impression
   alias Split.Sockets.Supervisor

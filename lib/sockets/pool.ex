@@ -27,7 +27,7 @@ defmodule Split.Sockets.Pool do
     )
   end
 
-  def send_message(message, checkout_timeout \\ 100) do
+  def send_message(message, checkout_timeout \\ 1000) do
     NimblePool.checkout!(
       __MODULE__,
       :checkout,
