@@ -113,7 +113,7 @@ defmodule Split.RPC.ResponseParser do
   end
 
   defp maybe_fallback(response, original_request) do
-    if :persistent_term.get(:splitd_fallback_enabled) do
+    if :persistent_term.get(:splitd_fallback_enabled, false) do
       Fallback.fallback(original_request)
     else
       response
