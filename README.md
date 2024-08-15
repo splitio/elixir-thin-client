@@ -54,3 +54,17 @@ There is a convenience makefile target to run `splitd` for integration testing. 
 export SPLIT_API_KEY=your-api-key
 make start_splitd
 ```
+
+### Running tests
+
+To run the tests, you can use the following command:
+
+```sh
+mix test
+```
+
+Or if you want to use TDD fashion with [fswatch](https://github.com/emcrisostomo/fswatch) when test files change:
+
+```sh
+fswatch lib test | mix test --listen-on-stdin
+```
