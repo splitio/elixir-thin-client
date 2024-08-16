@@ -1,11 +1,9 @@
 defmodule Split.Treatment do
-  defstruct [
-    :treatment,
-    label: nil,
-    config: nil,
-    change_number: nil,
-    timestamp: nil
-  ]
+  defstruct treatment: "control",
+            label: nil,
+            config: nil,
+            change_number: nil,
+            timestamp: nil
 
   @type t :: %__MODULE__{
           treatment: String.t(),
@@ -29,14 +27,6 @@ defmodule Split.Treatment do
       config: config,
       change_number: change_number,
       timestamp: timestamp
-    }
-  end
-
-  @spec fallback_response() :: map()
-  def fallback_response() do
-    %{
-      "s" => 1,
-      "p" => %{"t" => "control", "c" => nil, "l" => %{"l" => nil, "c" => nil, "m" => nil}}
     }
   end
 end

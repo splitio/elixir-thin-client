@@ -16,6 +16,7 @@ defmodule Split.Telemetry do
   """
   alias Split.Treatment
 
+  @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
   def send_impression(user_key, feature_name, %Treatment{} = treatment) do
     :telemetry.execute([:split, :impression], %{}, %{
       impression: %Split.Impression{

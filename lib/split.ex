@@ -1,13 +1,11 @@
 defmodule Split do
   @moduledoc """
   Documentation for `Split`.
-
-  ## Telemetry support
-
   """
   alias Split.Sockets.Pool
   alias Split.Treatment
-  alias Split.RPC
+  alias Split.RPC.Message
+  alias Split.RPC.ResponseParser
 
   @type t :: %Split{
           name: String.t(),
@@ -32,80 +30,105 @@ defmodule Split do
   ]
 
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
-          {:ok, Treatment.t()} | {:error, map()}
+          {:ok, Treatment.t()} | {:error, term()}
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
-    RPC.execute_treatment_rpc(
-      Split.RPC.GetTreatment,
-      user_key: user_key,
-      feature_name: feature_name,
-      bucketing_key: bucketing_key,
-      attributes: attributes
-    )
+    request =
+      Message.get_treatment(
+        user_key: user_key,
+        feature_name: feature_name,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
   end
 
   @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::
-          {:ok, map()} | {:error, map()}
+          {:ok, Treatment.t()} | {:error, term()}
   def get_treatment_with_config(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
-    RPC.execute_treatment_rpc(
-      Split.RPC.GetTreatmentWithConfig,
-      user_key: user_key,
-      feature_name: feature_name,
-      bucketing_key: bucketing_key,
-      attributes: attributes
-    )
+    request =
+      Message.get_treatment_with_config(
+        user_key: user_key,
+        feature_name: feature_name,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
   end
 
   @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) ::
-          {:ok, map()} | {:error, map()}
+          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
   def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
-    RPC.execute_treatment_rpc(
-      Split.RPC.GetTreatments,
-      user_key: user_key,
-      feature_names: feature_names,
-      bucketing_key: bucketing_key,
-      attributes: attributes
-    )
+    request =
+      Message.get_treatments(
+        user_key: user_key,
+        feature_names: feature_names,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
   end
 
   @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
-          {:ok, map()} | {:error, map()}
+          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
   def get_treatments_with_config(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
-    RPC.execute_treatment_rpc(
-      Split.RPC.GetTreatmentsWithConfig,
-      user_key: user_key,
-      feature_names: feature_names,
-      bucketing_key: bucketing_key,
-      attributes: attributes
-    )
+    request =
+      Message.get_treatments_with_config(
+        user_key: user_key,
+        feature_names: feature_names,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
   end
 
-  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
-          {:ok, map()} | {:error, map()}
+  @spec track(String.t(), String.t(), String.t(), term(), map()) :: :ok | {:error, term()}
   def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
-    user_key
-    |> Split.RPC.Track.build(traffic_type, event_type, value, properties)
-    |> Pool.send_message()
-    |> Split.RPC.Track.parse_response()
+    request = Message.track(user_key, traffic_type, event_type, value, properties)
+    execute_rpc(request)
   end
 
+  @spec split_names() :: {:ok, %{split_names: String.t()}} | {:error, term()}
   def split_names do
-    Split.RPC.SplitNames.build()
-    |> Pool.send_message()
-    |> Split.RPC.SplitNames.parse_response()
+    request = Message.split_names()
+    execute_rpc(request)
   end
 
-  @spec split(String.t()) :: {:ok, Split.t()} | {:error, map()}
+  @spec split(String.t()) :: {:ok, Split.t()} | {:error, term()}
   def split(name) do
-    name
-    |> Split.RPC.Split.build()
-    |> Pool.send_message()
-    |> Split.RPC.Split.parse_response()
+    request = Message.split(name)
+
+    execute_rpc(request)
   end
 
-  @spec splits() :: {:ok, [Split.t()]} | {:error, map()}
+  @spec splits() :: {:ok, [Split.t()]} | {:error, term()}
   def splits do
-    Split.RPC.Splits.build()
-    |> Pool.send_message()
-    |> Split.RPC.Splits.parse_response()
+    request = Message.splits()
+    execute_rpc(request)
+  end
+
+  defp execute_rpc(request) do
+    metadata = %{
+      rpc_call: Message.opcode_to_rpc_name(request.o)
+    }
+
+    :telemetry.span([:split, :rpc], metadata, fn ->
+      request
+      |> Pool.send_message()
+      |> ResponseParser.parse_response(request)
+      |> case do
+        {:ok, data} = response ->
+          {response, Map.put(metadata, :response, inspect(data))}
+
+        :ok ->
+          {:ok, metadata}
+
+        {:error, reason} = error ->
+          {error, Map.put(metadata, :error, reason)}
+      end
+    end)
   end
 end
