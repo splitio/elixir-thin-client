@@ -2,7 +2,7 @@ defmodule Split.RPC.Fallback do
   @moduledoc """
   This module is used to provide default values for all Splitd RPC calls.
 
-  When a call to Splitd fails, and the SDK was initialized  with `fallback_enabled`,
+  When a call to Splitd fails, and the SDK was initialized with `fallback_enabled`,
   the fallback values are returned instead of the error received from the socket.
   """
   use Split.RPC.Opcodes
