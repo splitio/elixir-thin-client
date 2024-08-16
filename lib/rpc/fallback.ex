@@ -46,6 +46,7 @@ defmodule Split.RPC.Fallback do
       iex> Fallback.fallback(%Message{o: 0x80})
       :ok
   """
+  @spec fallback(Message.t()) :: {:ok, map() | Treatment.t(), list(), nil} | :ok
   def fallback(%Message{o: opcode})
       when opcode in [@get_treatment_opcode, @get_treatment_with_config_opcode] do
     {:ok, %Treatment{}}

@@ -8,7 +8,7 @@ defmodule Split.RPC.Message do
   @client_id "Splitd_Elixir-" <> to_string(Application.spec(:split, :vsn))
 
   @type opcode :: unquote(Enum.reduce(@opcodes, &{:|, [], [&1, &2]}))
-  @typep protocol_version :: unquote(@protocol_version)
+  @type protocol_version :: unquote(@protocol_version)
 
   @derive [{Msgpax.Packer, fields: [:v, :o, :a]}]
   defstruct v: @protocol_version,
@@ -18,8 +18,20 @@ defmodule Split.RPC.Message do
   @type t :: %__MODULE__{
           v: protocol_version(),
           o: opcode(),
-          a: [term()]
+          a: list()
         }
+
+  @type get_treatment_args ::
+          {:user_key, String.t()}
+          | {:feature_name, String.t()}
+          | {:bucketing_key, String.t() | nil}
+          | {:attributes, map() | nil}
+
+  @type get_treatments_args ::
+          {:user_key, String.t()}
+          | {:feature_names, list(String.t())}
+          | {:bucketing_key, String.t() | nil}
+          | {:attributes, map() | nil}
 
   @doc """
   Builds a message to register a client in splitd.
@@ -29,6 +41,7 @@ defmodule Split.RPC.Message do
       iex> Message.register()
       %Message{v: 1, o: 0, a: ["123", "Splitd_Elixir-", 1]}
   """
+  @spec register() :: t()
   def register, do: %__MODULE__{o: @register_opcode, a: ["123", @client_id, 1]}
 
   @doc """
@@ -46,6 +59,7 @@ defmodule Split.RPC.Message do
       iex> Message.get_treatment(user_key: "user_key", feature_name: "feature_name")
       %Message{a: ["user_key", nil, "feature_name", %{}], o: 17, v: 1}
   """
+  @spec get_treatment([get_treatment_args()]) :: t()
   def get_treatment(opts) do
     treatment_payload(opts, @get_treatment_opcode)
   end
@@ -68,6 +82,7 @@ defmodule Split.RPC.Message do
       ...> )
       %Message{a: ["user_key", nil, "feature_name", %{}], o: 19, v: 1}
   """
+  @spec get_treatment_with_config([get_treatment_args()]) :: t()
   def get_treatment_with_config(opts) do
     treatment_payload(opts, @get_treatment_with_config_opcode)
   end
@@ -94,6 +109,7 @@ defmodule Split.RPC.Message do
       ...> )
       %Message{a: ["user_key", nil, ["feature_name1", "feature_name2"], %{}], o: 18, v: 1}
   """
+  @spec get_treatments([get_treatments_args()]) :: t()
   def get_treatments(opts) do
     treatment_payload(opts, @get_treatments_opcode, multiple: true)
   end
@@ -124,6 +140,7 @@ defmodule Split.RPC.Message do
         v: 1
       }
   """
+  @spec get_treatments_with_config([get_treatments_args()]) :: t()
   def get_treatments_with_config(opts) do
     treatment_payload(opts, @get_treatments_with_config_opcode, multiple: true)
   end
@@ -136,6 +153,7 @@ defmodule Split.RPC.Message do
       iex> Message.split("my_feature")
       %Message{v: 1, o: 161, a: ["my_feature"]}
   """
+  @spec split(String.t()) :: t()
   def split(split_name), do: %__MODULE__{o: @split_opcode, a: [split_name]}
 
   @doc """
@@ -146,6 +164,7 @@ defmodule Split.RPC.Message do
       iex> Message.splits()
       %Message{v: 1, o: 162, a: []}
   """
+  @spec splits() :: t()
   def splits(), do: %__MODULE__{o: @splits_opcode}
 
   @doc """
@@ -156,6 +175,7 @@ defmodule Split.RPC.Message do
       iex> Message.split_names()
       %Message{v: 1, o: 160, a: []}
   """
+  @spec split_names() :: t()
   def split_names(), do: %__MODULE__{o: @split_names_opcode}
 
   @doc """
@@ -173,6 +193,7 @@ defmodule Split.RPC.Message do
       iex> Message.track("user_key", "traffic_type", "my_event")
       %Message{v: 1, o: 128, a: ["user_key", "traffic_type", "my_event", nil, %{}]}
   """
+  @spec track(String.t(), String.t(), String.t(), any(), map()) :: t()
   def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     %__MODULE__{
       o: @track_opcode,

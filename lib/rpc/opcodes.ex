@@ -14,6 +14,7 @@ defmodule Split.RPC.Opcodes do
       @track_opcode 0x80
 
       @opcodes [
+        @register_opcode,
         @get_treatment_opcode,
         @get_treatment_with_config_opcode,
         @get_treatments_opcode,
