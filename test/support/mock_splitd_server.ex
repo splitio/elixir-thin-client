@@ -4,6 +4,9 @@ defmodule Split.Test.MockSplitdServer do
   require Logger
 
   def start_link(opts) do
+    socket_path = Keyword.get(opts, :socket_path)
+    File.rm(socket_path)
+
     Supervisor.start_link(__MODULE__, opts)
   end
 
