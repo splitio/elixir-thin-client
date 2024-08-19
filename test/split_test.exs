@@ -7,9 +7,8 @@ defmodule SplitThinElixirTest do
 
   setup_all context do
     socket_path = "/tmp/test-splitd-#{:erlang.phash2(context.case)}.sock"
-    File.rm(socket_path)
 
-    Split.Test.MockSplitdServer.start_link(socket_path: socket_path)
+    start_supervised!({Split.Test.MockSplitdServer, socket_path: socket_path})
     start_supervised!({Supervisor, %{socket_path: socket_path}})
 
     :ok
