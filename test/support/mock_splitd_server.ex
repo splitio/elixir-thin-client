@@ -19,7 +19,6 @@ defmodule Split.Test.MockSplitdServer do
 
   def accept(opts) do
     socket_path = Keyword.get(opts, :socket_path)
-    File.rm(socket_path)
 
     {:ok, socket} =
       :gen_tcp.listen(0,
