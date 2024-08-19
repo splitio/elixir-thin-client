@@ -5,6 +5,7 @@ defmodule Split.Sockets.Conn do
   require Logger
   alias Split.RPC.Message
   alias Split.RPC.Encoder
+  alias Split.Telemetry
 
   @type t :: %__MODULE__{
           socket: port() | nil,
@@ -40,20 +41,28 @@ defmodule Split.Sockets.Conn do
 
   @spec connect(t) :: {:ok, t()} | {:error, t(), term()}
   def connect(%__MODULE__{socket: nil, socket_path: socket_path} = conn) do
+    meta = %{socket_path: socket_path}
+    start_time = Telemetry.start(:connect, meta)
+
     case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, @default_connect_timeout) do
       {:ok, socket} ->
         conn = %{conn | socket: socket}
 
         case send_message(conn, Message.register()) do
           {:ok, _conn, _resp} ->
+            Telemetry.stop(:connect, start_time, meta)
             {:ok, conn}
 
-          {:error, _conn, reason} ->
+          {:error, conn, reason} ->
+            meta = Map.put(meta, :error, reason)
+            Telemetry.stop(:connect, start_time, meta)
             Logger.error("Error sending registration message: #{inspect(reason)}")
-            {:error, %{conn | socket: nil}, reason}
+            {:error, disconnect(conn), reason}
         end
 
       {:error, reason} ->
+        meta = Map.put(meta, :error, reason)
+        Telemetry.stop(:connect, start_time, meta)
         Logger.error("Error establishing socket connection: #{inspect(reason)}")
         {:error, conn, reason}
     end
@@ -71,13 +80,20 @@ defmodule Split.Sockets.Conn do
   def send_message(conn, message) do
     payload = Encoder.encode(message)
 
+    metadata = %{message: message}
+    start_time = Telemetry.start(:send, metadata)
+
     with :ok <- :gen_tcp.send(conn.socket, payload),
          {:ok, <<response_size::little-unsigned-size(32)>>} <-
            :gen_tcp.recv(conn.socket, 4, @default_rcv_timeout),
          {:ok, response} <- :gen_tcp.recv(conn.socket, response_size, @default_rcv_timeout) do
-      {:ok, conn, Msgpax.unpack!(response)}
+      unpacked_response = Msgpax.unpack!(response)
+      Telemetry.stop(:send, start_time, metadata, %{response: unpacked_response})
+      {:ok, conn, unpacked_response}
     else
       {:error, reason} ->
+        metadata = Map.put(metadata, :error, reason)
+        Telemetry.stop(:send, start_time, metadata)
         Logger.error("Error receiving response: #{inspect(reason)}")
         {:error, conn, reason}
     end

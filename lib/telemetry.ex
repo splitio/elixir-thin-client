@@ -16,6 +16,47 @@ defmodule Split.Telemetry do
   """
   alias Split.Treatment
 
+  @doc false
+  # emits a `start` telemetry event and returns the the start time
+  def start(event, meta \\ %{}, extra_measurements \\ %{}) do
+    start_time = System.monotonic_time()
+
+    :telemetry.execute(
+      [:split, event, :start],
+      Map.merge(extra_measurements, %{system_time: System.system_time()}),
+      meta
+    )
+
+    start_time
+  end
+
+  @doc false
+  # Emits a stop event.
+  def stop(event, start_time, meta \\ %{}, extra_measurements \\ %{}) do
+    end_time = System.monotonic_time()
+    measurements = Map.merge(extra_measurements, %{duration: end_time - start_time})
+
+    :telemetry.execute(
+      [:split, event, :stop],
+      measurements,
+      meta
+    )
+  end
+
+  @doc false
+  def exception(event, start_time, kind, reason, stack, meta \\ %{}, extra_measurements \\ %{}) do
+    end_time = System.monotonic_time()
+    measurements = Map.merge(extra_measurements, %{duration: end_time - start_time})
+
+    meta =
+      meta
+      |> Map.put(:kind, kind)
+      |> Map.put(:reason, reason)
+      |> Map.put(:stacktrace, stack)
+
+    :telemetry.execute([:split, event, :exception], measurements, meta)
+  end
+
   @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
   def send_impression(user_key, feature_name, %Treatment{} = treatment) do
     :telemetry.execute([:split, :impression], %{}, %{
