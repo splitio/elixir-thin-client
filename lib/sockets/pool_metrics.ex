@@ -57,9 +57,6 @@ defmodule Split.Sockets.PoolMetrics do
   end
 
   defp metric_index(metric) do
-    case Enum.find_index(@metrics, &(&1 == metric)) do
-      nil -> raise ArgumentError, "Invalid metric: #{inspect(metric)}"
-      index -> index + 1
-    end
+    Enum.find_index(@metrics, &(&1 == metric)) + 1
   end
 end
