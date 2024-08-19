@@ -5,8 +5,11 @@ defmodule SplitThinElixirTest do
   alias Split.Sockets.Supervisor
   alias Split.Treatment
 
+  @socket_path "/tmp/elixir-splitd.sock"
+
   setup_all do
-    start_supervised!({Supervisor, %{socket_path: "/tmp/elixir-splitd.sock"}})
+    Split.Test.MockSplitdServer.start_link(socket_path: @socket_path)
+    start_supervised!({Supervisor, %{socket_path: @socket_path}})
 
     :ok
   end

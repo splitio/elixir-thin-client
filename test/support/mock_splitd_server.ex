@@ -3,29 +3,30 @@ defmodule Split.Test.MockSplitdServer do
 
   require Logger
 
-  @socket_path "/tmp/elixir-splitd.sock"
-
   def start_link(opts) do
     Supervisor.start_link(__MODULE__, opts)
   end
 
   @impl Supervisor
-  def init(_opts \\ []) do
+  def init(opts \\ []) do
     children = [
       {Task.Supervisor, strategy: :one_for_one, name: TestTaskSupervisor},
-      {Task, fn -> accept() end}
+      {Task, fn -> accept(opts) end}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def accept() do
+  def accept(opts) do
+    socket_path = Keyword.get(opts, :socket_path)
+    File.rm(socket_path)
+
     {:ok, socket} =
       :gen_tcp.listen(0,
         active: false,
         packet: :raw,
         reuseaddr: true,
-        ifaddr: {:local, @socket_path}
+        ifaddr: {:local, socket_path}
       )
 
     loop_acceptor(socket)
