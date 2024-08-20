@@ -106,4 +106,24 @@ defmodule SplitThinElixirTest do
   test "splits/0" do
     assert {:ok, [%Split{name: "test-split"}]} = Split.splits()
   end
+
+  describe "telemetry" do
+    test "emits telemetry spans for rpc calls" do
+      ref =
+        :telemetry_test.attach_event_handlers(self(), [
+          [:split, :rpc, :start],
+          [:split, :rpc, :stop]
+        ])
+
+      {:ok, split} = Split.split("test-split")
+      split_string = inspect(split)
+
+      assert_received {[:split, :rpc, :start], ^ref, _, %{rpc_call: :split}}
+
+      assert_received {[:split, :rpc, :stop], ^ref, _,
+                       %{rpc_call: :split, response: ^split_string}}
+
+      :telemetry.detach(ref)
+    end
+  end
 end
