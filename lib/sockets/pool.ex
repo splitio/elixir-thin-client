@@ -7,6 +7,8 @@ defmodule Split.Sockets.Pool do
   alias Split.Sockets.PoolMetrics
   alias Split.Telemetry
 
+  @default_checkout_timeout 1000
+
   def child_spec(opts) do
     %{
       id: __MODULE__,
@@ -17,24 +19,31 @@ defmodule Split.Sockets.Pool do
   def start_link(opts) do
     fallback_enabled = Map.get(opts, :fallback_enabled, false)
     :persistent_term.put(:splitd_fallback_enabled, fallback_enabled)
+
+    pool_name = Map.get(opts, :pool_name, __MODULE__)
     pool_size = Map.get(opts, :pool_size, System.schedulers_online())
 
     opts =
       opts
       |> Map.put_new(:fallback_enabled, fallback_enabled)
       |> Map.put_new(:pool_size, pool_size)
+      |> Map.put_new(:pool_name, pool_name)
 
     NimblePool.start_link(
       worker: {__MODULE__, opts},
       pool_size: opts[:pool_size],
       lazy: false,
       worker_idle_timeout: :timer.minutes(30),
-      name: __MODULE__
+      name: pool_name
     )
   end
 
-  def send_message(message, checkout_timeout \\ 1000) do
+  def send_message(message, opts \\ []) do
+    pool_name = Keyword.get(opts, :pool_name, __MODULE__)
+    checkout_timeout = Keyword.get(opts, :checkout_timeout, @default_checkout_timeout)
+
     metadata = %{
+      pool_name: pool_name,
       message: message
     }
 
@@ -42,16 +51,16 @@ defmodule Split.Sockets.Pool do
 
     try do
       NimblePool.checkout!(
-        __MODULE__,
+        pool_name,
         :checkout,
         fn caller, {state, conn} ->
-          Telemetry.stop(:queue, start_time, metadata)
-
           with {:ok, conn} <- Conn.connect(conn),
                {:ok, conn, resp} <- Conn.send_message(conn, message) do
+            Telemetry.stop(:queue, start_time, metadata)
             {{:ok, resp}, update_if_open(conn, state, caller)}
           else
             {:error, conn, error} ->
+              Telemetry.stop(:queue, start_time, Map.put(metadata, :error, error))
               {{:error, error}, update_if_open(conn, state, caller)}
           end
         end,
@@ -61,7 +70,7 @@ defmodule Split.Sockets.Pool do
       :exit, reason ->
         Telemetry.exception(:queue, start_time, :exit, reason, __STACKTRACE__, metadata)
 
-        exit(reason)
+        {:error, reason}
     end
   end
 
@@ -88,7 +97,7 @@ defmodule Split.Sockets.Pool do
       """)
     end
 
-    {:ok, metrics_ref} = PoolMetrics.init(__MODULE__, opts[:pool_size])
+    {:ok, metrics_ref} = PoolMetrics.init(opts[:pool_name], opts[:pool_size])
 
     {:ok, {opts, metrics_ref}}
   end
@@ -106,8 +115,8 @@ defmodule Split.Sockets.Pool do
 
   def handle_checkout(:checkout, _from, conn, {_opts, metrics_ref} = pool_state) do
     if Conn.is_open?(conn) do
-      {:ok, {:reused, conn}, conn, pool_state}
       PoolMetrics.update(metrics_ref, {:connections_in_use, 1})
+      {:ok, {:reused, conn}, conn, pool_state}
     else
       {:remove, :closed, pool_state}
     end

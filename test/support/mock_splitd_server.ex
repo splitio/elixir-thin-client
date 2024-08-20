@@ -51,13 +51,20 @@ defmodule Split.Test.MockSplitdServer do
         payload = Enum.slice(data, 4..-1//1)
         unpacked_payload = Msgpax.unpack!(payload)
 
-        response = build_response(Map.get(unpacked_payload, "o"))
-        packed_message = Msgpax.pack!(response, iodata: false)
+        case build_response(Map.get(unpacked_payload, "o")) do
+          response when is_map(response) ->
+            packed_message = Msgpax.pack!(response, iodata: false)
 
-        payload =
-          <<byte_size(packed_message)::integer-unsigned-little-size(32), packed_message::binary>>
+            payload =
+              <<byte_size(packed_message)::integer-unsigned-little-size(32),
+                packed_message::binary>>
 
-        :ok = :gen_tcp.send(client, payload)
+            :ok = :gen_tcp.send(client, payload)
+
+          {:error, _reason} ->
+            :gen_tcp.shutdown(client, :read)
+        end
+
         serve(client)
 
       _other ->
@@ -112,4 +119,6 @@ defmodule Split.Test.MockSplitdServer do
       }
     }
   end
+
+  defp build_response(_invalid_opcode), do: {:error, :invalid_opcode}
 end

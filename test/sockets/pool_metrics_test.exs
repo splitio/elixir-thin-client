@@ -12,7 +12,7 @@ defmodule Split.Sockets.PoolMetricsTest do
 
   describe "get/1" do
     test "gets the metrics for a pool" do
-      {:ok, ref} = PoolMetrics.init(:test_pool_name, 10)
+      {:ok, _ref} = PoolMetrics.init(:test_pool_name, 10)
 
       assert PoolMetrics.get(:test_pool_name) ==
                {:ok,

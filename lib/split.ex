@@ -110,14 +110,14 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  defp execute_rpc(request) do
+  defp execute_rpc(request, opts \\ []) do
     metadata = %{
       rpc_call: Message.opcode_to_rpc_name(request.o)
     }
 
     :telemetry.span([:split, :rpc], metadata, fn ->
       request
-      |> Pool.send_message()
+      |> Pool.send_message(opts)
       |> ResponseParser.parse_response(request)
       |> case do
         {:ok, data} = response ->
