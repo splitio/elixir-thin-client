@@ -61,8 +61,18 @@ defmodule Split.Test.MockSplitdServer do
 
             :ok = :gen_tcp.send(client, payload)
 
-          {:error, _reason} ->
+          {:error, :disconnect} ->
             :gen_tcp.shutdown(client, :read)
+
+          {:error, :wait} ->
+            # Wait for a bit before sending a basic sucessful response
+            Process.sleep(1)
+
+            resp = Msgpax.pack!(%{"s" => 1}, iodata: false)
+
+            payload = <<byte_size(resp)::integer-unsigned-little-size(32), resp::binary>>
+
+            :ok = :gen_tcp.send(client, payload)
         end
 
         serve(client)
@@ -120,5 +130,6 @@ defmodule Split.Test.MockSplitdServer do
     }
   end
 
-  defp build_response(_invalid_opcode), do: {:error, :invalid_opcode}
+  defp build_response("disconnect"), do: {:error, :disconnect}
+  defp build_response("wait"), do: {:error, :wait}
 end

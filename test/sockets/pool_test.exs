@@ -4,6 +4,7 @@ defmodule Split.Sockets.PoolTest do
   alias Split.RPC.Message
   alias Split.Sockets.Supervisor
   alias Split.Sockets.Pool
+  alias Split.Sockets.PoolMetrics
 
   setup_all context do
     socket_path = "/tmp/test-splitd-#{:erlang.phash2(context.case)}.sock"
@@ -44,6 +45,8 @@ defmodule Split.Sockets.PoolTest do
 
       assert_received {[:split, :queue, :stop], ^ref, _,
                        %{message: ^message, pool_name: __MODULE__}}
+
+      :telemetry.detach(ref)
     end
 
     test "emits pool queue telemetry events when message fails" do
@@ -53,8 +56,8 @@ defmodule Split.Sockets.PoolTest do
           [:split, :queue, :stop]
         ])
 
-      # Sending an invalid message to the SplitdMockServer will cause it to close the connection
-      message = %{invalid: "message"}
+      # Sending a disconnect message to the SplitdMockServer will cause it to close the connection
+      message = %{"o" => :disconnect}
 
       assert {:error, _reason} = Pool.send_message(message, pool_name: __MODULE__)
 
@@ -63,6 +66,8 @@ defmodule Split.Sockets.PoolTest do
 
       assert_received {[:split, :queue, :stop], ^ref, _,
                        %{message: ^message, error: :closed, pool_name: __MODULE__}}
+
+      :telemetry.detach(ref)
     end
 
     test "emits pool queue telemetry events when worker cannot be checked out" do
@@ -88,6 +93,36 @@ defmodule Split.Sockets.PoolTest do
                          stacktrace: _,
                          pool_name: __MODULE__
                        }}
+
+      :telemetry.detach(ref)
+    end
+
+    test "updates pool utilization metrics" do
+      # Sending a wait message to the SplitdMockServer will cause it to sleep for 1 millisecond before responding
+      message = %{"o" => :wait}
+
+      {:ok, _response} = Pool.send_message(message, pool_name: __MODULE__)
+
+      assert {:ok,
+              %Split.Sockets.PoolMetrics{
+                connections_available: 9,
+                connections_in_use: 1,
+                pool_size: 10
+              }} = PoolMetrics.get(__MODULE__)
+
+      # Wait for the connection to be returned back to the pool
+      wait_connection_checkin()
+
+      assert {:ok,
+              %Split.Sockets.PoolMetrics{
+                connections_available: 10,
+                connections_in_use: 0,
+                pool_size: 10
+              }} = PoolMetrics.get(__MODULE__)
     end
   end
+
+  # Waits an an arbitrary amount of milliseconds;
+  # enough for the connection to be returned back to the pool.
+  defp wait_connection_checkin(), do: Process.sleep(5)
 end
