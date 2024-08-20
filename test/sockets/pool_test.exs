@@ -6,6 +6,8 @@ defmodule Split.Sockets.PoolTest do
   alias Split.Sockets.Pool
   alias Split.Sockets.PoolMetrics
 
+  import ExUnit.CaptureLog
+
   setup_all context do
     socket_path = "/tmp/test-splitd-#{:erlang.phash2(context.case)}.sock"
 
@@ -79,8 +81,11 @@ defmodule Split.Sockets.PoolTest do
 
       message = Message.splits()
 
-      assert {:error, _reason} =
-               Pool.send_message(message, pool_name: __MODULE__, checkout_timeout: 0)
+      assert capture_log(fn ->
+               assert {:error, _reason} =
+                        Pool.send_message(message, pool_name: __MODULE__, checkout_timeout: 0)
+             end) =~
+               "The Split SDK was unable to provide a connection within the timeout (0 milliseconds)"
 
       assert_received {[:split, :queue, :start], ^ref, _,
                        %{message: ^message, pool_name: __MODULE__}}

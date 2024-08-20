@@ -70,7 +70,20 @@ defmodule Split.Sockets.Pool do
       :exit, reason ->
         Telemetry.exception(:queue, start_time, :exit, reason, __STACKTRACE__, metadata)
 
-        {:error, reason}
+        case reason do
+          {:timeout, {NimblePool, :checkout, _affected_pids}} ->
+            Logger.error("""
+            The Split SDK was unable to provide a connection within the timeout (#{checkout_timeout} milliseconds) \
+            due to excess queuing for connections. Consider adjusting the pool size, checkout_timeout or reducing the \
+            rate of requests if it is possible that the splitd service is unable to keep up \
+            with the current rate.
+            """)
+
+            {:error, reason}
+
+          _ ->
+            {:error, reason}
+        end
     end
   end
 
