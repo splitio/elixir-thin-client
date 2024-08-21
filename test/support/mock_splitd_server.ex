@@ -43,7 +43,7 @@ defmodule Split.Test.MockSplitdServer do
     if File.exists?(socket_path) do
       :ok
     else
-      Process.sleep(5)
+      Process.sleep(1)
       wait_until_listening(socket_path)
     end
   end
