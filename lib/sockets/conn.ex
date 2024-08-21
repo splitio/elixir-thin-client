@@ -86,13 +86,9 @@ defmodule Split.Sockets.Conn do
     start_time = Telemetry.start(:send, metadata)
 
     with :ok <- :gen_tcp.send(conn.socket, payload),
-         {:ok, <<response_size::little-unsigned-size(32)>>} <-
-           :gen_tcp.recv(conn.socket, 4, @default_rcv_timeout),
-         {:ok, response} <- :gen_tcp.recv(conn.socket, response_size, @default_rcv_timeout) do
-      unpacked_response = Msgpax.unpack!(response)
-
-      Telemetry.stop(:send, start_time, Map.put(metadata, :response, unpacked_response))
-      {:ok, conn, unpacked_response}
+         {:ok, response} <- receive_response(conn, @default_rcv_timeout) do
+      Telemetry.stop(:send, start_time, Map.put(metadata, :response, response))
+      {:ok, conn, response}
     else
       {:error, reason} ->
         metadata = Map.put(metadata, :error, reason)
@@ -126,5 +122,22 @@ defmodule Split.Sockets.Conn do
   def disconnect(%__MODULE__{socket: socket} = conn) do
     :gen_tcp.close(socket)
     %{conn | socket: nil}
+  end
+
+  defp receive_response(conn, timeout) do
+    start_time = Telemetry.start(:receive, %{})
+
+    with {:ok, <<response_size::little-unsigned-size(32)>>} <-
+           :gen_tcp.recv(conn.socket, 4, timeout),
+         {:ok, response} <- :gen_tcp.recv(conn.socket, response_size, timeout),
+         {:ok, unpacked_response} <- Msgpax.unpack(response) do
+      Telemetry.stop(:receive, start_time, %{response: unpacked_response})
+
+      {:ok, unpacked_response}
+    else
+      {:error, reason} ->
+        Telemetry.stop(:receive, start_time, %{error: reason})
+        {:error, reason}
+    end
   end
 end

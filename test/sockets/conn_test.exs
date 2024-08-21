@@ -36,6 +36,31 @@ defmodule Split.Sockets.ConnTest do
       assert_received {[:split, :connect, :stop], ^ref, _, %{socket_path: ^socket_path}}
     end
 
+    test "emits telemetry events for registration message on connect", %{socket_path: socket_path} do
+      ref =
+        :telemetry_test.attach_event_handlers(self(), [
+          [:split, :send, :start],
+          [:split, :send, :stop],
+          [:split, :receive, :start],
+          [:split, :receive, :stop]
+        ])
+
+      Conn.new(socket_path) |> Conn.connect()
+
+      assert_received {[:split, :send, :start], ^ref, _,
+                       %{message: %Message{v: 1, o: @register_opcode}}}
+
+      assert_received {[:split, :send, :stop], ^ref, _,
+                       %{
+                         message: %Message{v: 1, o: @register_opcode},
+                         response: %{"s" => @status_ok}
+                       }}
+
+      assert_received {[:split, :receive, :start], ^ref, _, %{}}
+
+      assert_received {[:split, :receive, :stop], ^ref, _, %{response: %{"s" => @status_ok}}}
+    end
+
     test "emits telemetry events for failed connection", %{
       socket_path: socket_path,
       splitd_name: splitd_name
@@ -66,17 +91,13 @@ defmodule Split.Sockets.ConnTest do
 
       {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
 
-      # check that telemetry events are emitted for registration message
-      assert_register_events(ref)
-
       message = Message.get_treatment(user_key: "user-id", feature_name: "feature")
 
-      Conn.send_message(conn, message)
+      {:ok, _conn, response} = Conn.send_message(conn, message)
 
       assert_received {[:split, :send, :start], ^ref, _, %{message: ^message}}
 
-      assert_received {[:split, :send, :stop], ^ref, _,
-                       %{message: ^message, response: %{"s" => @status_ok}}}
+      assert_received {[:split, :send, :stop], ^ref, _, %{message: ^message, response: ^response}}
     end
 
     test "emits telemetry events for failed message sending", %{
@@ -91,9 +112,6 @@ defmodule Split.Sockets.ConnTest do
 
       {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
 
-      # check that telemetry events are emitted for registration message
-      assert_register_events(ref)
-
       message = Message.get_treatment(user_key: "user-id", feature_name: "feature")
 
       # Stop the mocked splitd server so the message sending errors
@@ -106,15 +124,45 @@ defmodule Split.Sockets.ConnTest do
       assert_received {[:split, :send, :stop], ^ref, _, %{error: ^reason, message: ^message}}
     end
 
-    defp assert_register_events(ref) do
-      assert_received {[:split, :send, :start], ^ref, _,
-                       %{message: %Message{v: 1, o: @register_opcode}}}
+    test "emits telemetry events for successful message receiving", %{socket_path: socket_path} do
+      ref =
+        :telemetry_test.attach_event_handlers(self(), [
+          [:split, :receive, :start],
+          [:split, :receive, :stop]
+        ])
 
-      assert_received {[:split, :send, :stop], ^ref, _,
-                       %{
-                         message: %Message{v: 1, o: @register_opcode},
-                         response: %{"s" => @status_ok}
-                       }}
+      {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
+
+      message = Message.get_treatment(user_key: "user-id", feature_name: "feature")
+
+      assert {:ok, _conn, response} = Conn.send_message(conn, message)
+
+      assert_received {[:split, :receive, :start], ^ref, _, %{}}
+
+      assert_received {[:split, :receive, :stop], ^ref, _, %{response: ^response}}
+    end
+
+    test "emits telemetry events for failed message receiving", %{socket_path: socket_path} do
+      ref =
+        :telemetry_test.attach_event_handlers(self(), [
+          [:split, :receive, :start],
+          [:split, :receive, :stop]
+        ])
+
+      {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
+
+      # receive the  registration messages
+      assert_received {[:split, :receive, :start], ^ref, _, %{}}
+      assert_received {[:split, :receive, :stop], ^ref, _, %{response: %{"s" => @status_ok}}}
+
+      # make the splitd server close the connection before we receive the response
+      Conn.send_message(conn, %{"o" => :disconnect})
+
+      # Stop the mocked splitd server so the message receiving errors
+
+      assert_received {[:split, :receive, :start], ^ref, _, %{}}
+
+      assert_received {[:split, :receive, :stop], ^ref, _, %{error: :closed}}
     end
   end
 end
