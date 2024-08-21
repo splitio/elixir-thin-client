@@ -47,7 +47,7 @@ defmodule Split.Sockets.Pool do
       message: message
     }
 
-    start_time = Telemetry.start(:queue, metadata)
+    queue_start = Telemetry.start(:queue, metadata)
 
     try do
       NimblePool.checkout!(
@@ -56,11 +56,11 @@ defmodule Split.Sockets.Pool do
         fn caller, {state, conn} ->
           with {:ok, conn} <- Conn.connect(conn),
                {:ok, conn, resp} <- Conn.send_message(conn, message) do
-            Telemetry.stop(:queue, start_time, metadata)
+            Telemetry.stop(queue_start, metadata)
             {{:ok, resp}, update_if_open(conn, state, caller)}
           else
             {:error, conn, error} ->
-              Telemetry.stop(:queue, start_time, Map.put(metadata, :error, error))
+              Telemetry.stop(queue_start, Map.put(metadata, :error, error))
               {{:error, error}, update_if_open(conn, state, caller)}
           end
         end,
@@ -68,7 +68,7 @@ defmodule Split.Sockets.Pool do
       )
     catch
       :exit, reason ->
-        Telemetry.exception(:queue, start_time, :exit, reason, __STACKTRACE__, metadata)
+        Telemetry.exception(queue_start, :exit, reason, __STACKTRACE__, metadata)
 
         case reason do
           {:timeout, {NimblePool, :checkout, _affected_pids}} ->

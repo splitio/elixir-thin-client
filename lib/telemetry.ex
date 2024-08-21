@@ -88,49 +88,87 @@ defmodule Split.Telemetry do
   """
   alias Split.Treatment
 
+  defstruct span_name: nil, telemetry_span_context: nil, start_time: nil, start_metadata: nil
+
+  @opaque t :: %__MODULE__{
+            span_name: atom(),
+            telemetry_span_context: reference(),
+            start_time: integer(),
+            start_metadata: :telemetry.event_metadata()
+          }
+
+  @app_name :split
+
   @doc """
-  Emits a `start` telemetry event and returns the the start time.
+  Emits a `start` telemetry span.
   """
-  def start(event, meta \\ %{}, extra_measurements \\ %{}) do
-    start_time = System.monotonic_time()
+  @spec start(atom(), :telemetry.event_metadata(), :telemetry.event_measurements()) :: t()
+  def start(span_name, metadata \\ %{}, extra_measurements \\ %{}) do
+    telemetry_span_context = make_ref()
+    measurements = Map.put_new_lazy(extra_measurements, :monotonic_time, &monotonic_time/0)
+    metadata = Map.put(metadata, :telemetry_span_context, telemetry_span_context)
 
-    :telemetry.execute(
-      [:split, event, :start],
-      Map.merge(extra_measurements, %{system_time: System.system_time()}),
-      meta
-    )
+    :telemetry.execute([@app_name, span_name, :start], measurements, metadata)
 
-    start_time
+    %__MODULE__{
+      span_name: span_name,
+      telemetry_span_context: telemetry_span_context,
+      start_time: measurements[:monotonic_time],
+      start_metadata: metadata
+    }
   end
 
   @doc """
   Emits a telemetry `stop` event.
   """
-  def stop(event, start_time, meta \\ %{}, extra_measurements \\ %{}) do
-    end_time = System.monotonic_time()
-    measurements = Map.merge(extra_measurements, %{duration: end_time - start_time})
+  @spec stop(t(), :telemetry.event_metadata(), :telemetry.event_measurements()) :: :ok
+  def stop(start_event, metadata \\ %{}, extra_measurements \\ %{}) do
+    measurements = Map.put_new_lazy(extra_measurements, :monotonic_time, &monotonic_time/0)
+
+    measurements =
+      Map.put(measurements, :duration, measurements[:monotonic_time] - start_event.start_time)
+
+    metadata = Map.merge(start_event.start_metadata, metadata)
 
     :telemetry.execute(
-      [:split, event, :stop],
+      [@app_name, start_event.span_name, :stop],
       measurements,
-      meta
+      metadata
     )
   end
 
   @doc """
   Emits a telemetry `exception` event.
   """
-  def exception(event, start_time, kind, reason, stack, meta \\ %{}, extra_measurements \\ %{}) do
-    end_time = System.monotonic_time()
-    measurements = Map.merge(extra_measurements, %{duration: end_time - start_time})
+  @spec exception(
+          t(),
+          atom(),
+          term(),
+          Exception.stacktrace(),
+          :telemetry.event_metadata()
+        ) :: :ok
+  def exception(
+        start_event,
+        kind,
+        reason,
+        stacktrace,
+        extra_metadata \\ %{}
+      ) do
+    measurements = Map.put_new_lazy(%{}, :monotonic_time, &monotonic_time/0)
 
-    meta =
-      meta
-      |> Map.put(:kind, kind)
-      |> Map.put(:reason, reason)
-      |> Map.put(:stacktrace, stack)
+    measurements =
+      Map.put(measurements, :duration, measurements[:monotonic_time] - start_event.start_time)
 
-    :telemetry.execute([:split, event, :exception], measurements, meta)
+    metadata =
+      start_event.start_metadata
+      |> Map.merge(extra_metadata)
+      |> Map.merge(%{
+        kind: kind,
+        reason: reason,
+        stacktrace: stacktrace
+      })
+
+    :telemetry.execute([@app_name, start_event.span_name, :exception], measurements, metadata)
   end
 
   @doc """
@@ -138,7 +176,7 @@ defmodule Split.Telemetry do
   """
   @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
   def send_impression(user_key, feature_name, %Treatment{} = treatment) do
-    :telemetry.execute([:split, :impression], %{}, %{
+    :telemetry.execute([@app_name, :impression], %{}, %{
       impression: %Split.Impression{
         key: user_key,
         feature: feature_name,
@@ -149,4 +187,7 @@ defmodule Split.Telemetry do
       }
     })
   end
+
+  @spec monotonic_time :: integer()
+  defdelegate monotonic_time, to: System
 end

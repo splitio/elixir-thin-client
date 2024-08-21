@@ -43,8 +43,7 @@ defmodule Split.Sockets.Conn do
   def connect(%__MODULE__{socket: nil, socket_path: socket_path} = conn) do
     connect_timeout = Map.get(conn.opts, :connect_timeout, @default_connect_timeout)
 
-    meta = %{socket_path: socket_path}
-    start_time = Telemetry.start(:connect, meta)
+    connect_start = Telemetry.start(:connect, %{socket_path: socket_path})
 
     case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, connect_timeout) do
       {:ok, socket} ->
@@ -52,19 +51,17 @@ defmodule Split.Sockets.Conn do
 
         case send_message(conn, Message.register()) do
           {:ok, _conn, _resp} ->
-            Telemetry.stop(:connect, start_time, meta)
+            Telemetry.stop(connect_start)
             {:ok, conn}
 
           {:error, conn, reason} ->
-            meta = Map.put(meta, :error, reason)
-            Telemetry.stop(:connect, start_time, meta)
+            Telemetry.stop(connect_start, %{error: reason})
             Logger.error("Error sending registration message: #{inspect(reason)}")
             {:error, disconnect(conn), reason}
         end
 
       {:error, reason} ->
-        meta = Map.put(meta, :error, reason)
-        Telemetry.stop(:connect, start_time, meta)
+        Telemetry.stop(connect_start, %{error: reason})
         Logger.error("Error establishing socket connection: #{inspect(reason)}")
         {:error, conn, reason}
     end
@@ -81,18 +78,16 @@ defmodule Split.Sockets.Conn do
 
   def send_message(conn, message) do
     payload = Encoder.encode(message)
-
-    metadata = %{message: message}
-    start_time = Telemetry.start(:send, metadata)
+    telemetry_meta = %{request: message}
+    send_start = Telemetry.start(:send, telemetry_meta)
 
     with :ok <- :gen_tcp.send(conn.socket, payload),
-         {:ok, response} <- receive_response(conn, @default_rcv_timeout) do
-      Telemetry.stop(:send, start_time, Map.put(metadata, :response, response))
+         {:ok, response} <- receive_response(conn, telemetry_meta, @default_rcv_timeout) do
+      Telemetry.stop(send_start, %{response: response})
       {:ok, conn, response}
     else
       {:error, reason} ->
-        metadata = Map.put(metadata, :error, reason)
-        Telemetry.stop(:send, start_time, metadata)
+        Telemetry.stop(send_start, %{error: reason})
         Logger.error("Error receiving response: #{inspect(reason)}")
         {:error, conn, reason}
     end
@@ -124,19 +119,19 @@ defmodule Split.Sockets.Conn do
     %{conn | socket: nil}
   end
 
-  defp receive_response(conn, timeout) do
-    start_time = Telemetry.start(:receive, %{})
+  defp receive_response(conn, telemetry_meta, timeout) do
+    receive_start = Telemetry.start(:receive, telemetry_meta)
 
     with {:ok, <<response_size::little-unsigned-size(32)>>} <-
            :gen_tcp.recv(conn.socket, 4, timeout),
          {:ok, response} <- :gen_tcp.recv(conn.socket, response_size, timeout),
          {:ok, unpacked_response} <- Msgpax.unpack(response) do
-      Telemetry.stop(:receive, start_time, %{response: unpacked_response})
+      Telemetry.stop(receive_start, %{response: unpacked_response})
 
       {:ok, unpacked_response}
     else
       {:error, reason} ->
-        Telemetry.stop(:receive, start_time, %{error: reason})
+        Telemetry.stop(receive_start, %{error: reason})
         {:error, reason}
     end
   end
