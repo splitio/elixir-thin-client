@@ -9,9 +9,15 @@ defmodule Split.Sockets.PoolTest do
   import ExUnit.CaptureLog
 
   setup_all context do
-    socket_path = "/tmp/test-splitd-#{:erlang.phash2(context.case)}.sock"
+    test_id = :erlang.phash2(context.case)
+    socket_path = "/tmp/test-splitd-#{test_id}.sock"
 
-    Split.Test.MockSplitdServer.start_link(socket_path: socket_path)
+    start_supervised!(
+      {Split.Test.MockSplitdServer, socket_path: socket_path, name: :"test-#{test_id}"}
+    )
+
+    Split.Test.MockSplitdServer.wait_until_listening(socket_path)
+
     start_supervised!({Supervisor, %{socket_path: socket_path, pool_name: __MODULE__}})
 
     :ok

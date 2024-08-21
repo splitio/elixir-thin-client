@@ -24,6 +24,9 @@ defmodule Split.RPC.Opcodes do
         @split_names_opcode,
         @track_opcode
       ]
+
+      @status_ok 0x01
+      @status_error 0x10
     end
   end
 end

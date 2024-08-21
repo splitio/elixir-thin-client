@@ -4,16 +4,21 @@ defmodule Split.Test.MockSplitdServer do
   require Logger
 
   def start_link(opts) do
-    socket_path = Keyword.get(opts, :socket_path)
-    File.rm(socket_path)
+    name = Keyword.get(opts, :name, __MODULE__)
 
-    Supervisor.start_link(__MODULE__, opts)
+    Supervisor.start_link(__MODULE__, opts, name: name)
   end
 
   @impl Supervisor
   def init(opts \\ []) do
+    socket_path = Keyword.get(opts, :socket_path)
+    name = Keyword.get(opts, :name, __MODULE__)
+    opts = Keyword.put_new(opts, :name, name)
+
+    File.rm(socket_path)
+
     children = [
-      {Task.Supervisor, strategy: :one_for_one, name: TestTaskSupervisor},
+      {Task.Supervisor, strategy: :one_for_one, name: :"#{name}-task-supervisor"},
       {Task, fn -> accept(opts) end}
     ]
 
@@ -31,18 +36,27 @@ defmodule Split.Test.MockSplitdServer do
         ifaddr: {:local, socket_path}
       )
 
-    loop_acceptor(socket)
+    loop_acceptor(socket, opts)
   end
 
-  defp loop_acceptor(socket) do
+  def wait_until_listening(socket_path) do
+    if File.exists?(socket_path) do
+      :ok
+    else
+      Process.sleep(5)
+      wait_until_listening(socket_path)
+    end
+  end
+
+  defp loop_acceptor(socket, opts) do
     {:ok, client} = :gen_tcp.accept(socket)
 
     {:ok, _pid} =
-      Task.Supervisor.start_child(TestTaskSupervisor, __MODULE__, :serve, [
+      Task.Supervisor.start_child(:"#{opts[:name]}-task-supervisor", __MODULE__, :serve, [
         client
       ])
 
-    loop_acceptor(socket)
+    loop_acceptor(socket, opts)
   end
 
   def serve(client) do
@@ -66,7 +80,7 @@ defmodule Split.Test.MockSplitdServer do
 
           {:error, :wait} ->
             # Wait for a bit before sending a basic sucessful response
-            Process.sleep(1)
+            Process.sleep(2)
 
             resp = Msgpax.pack!(%{"s" => 1}, iodata: false)
 

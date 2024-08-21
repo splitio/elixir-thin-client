@@ -41,10 +41,12 @@ defmodule Split.Sockets.Conn do
 
   @spec connect(t) :: {:ok, t()} | {:error, t(), term()}
   def connect(%__MODULE__{socket: nil, socket_path: socket_path} = conn) do
+    connect_timeout = Map.get(conn.opts, :connect_timeout, @default_connect_timeout)
+
     meta = %{socket_path: socket_path}
     start_time = Telemetry.start(:connect, meta)
 
-    case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, @default_connect_timeout) do
+    case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, connect_timeout) do
       {:ok, socket} ->
         conn = %{conn | socket: socket}
 
@@ -88,7 +90,8 @@ defmodule Split.Sockets.Conn do
            :gen_tcp.recv(conn.socket, 4, @default_rcv_timeout),
          {:ok, response} <- :gen_tcp.recv(conn.socket, response_size, @default_rcv_timeout) do
       unpacked_response = Msgpax.unpack!(response)
-      Telemetry.stop(:send, start_time, metadata, %{response: unpacked_response})
+
+      Telemetry.stop(:send, start_time, Map.put(metadata, :response, unpacked_response))
       {:ok, conn, unpacked_response}
     else
       {:error, reason} ->

@@ -10,9 +10,6 @@ defmodule Split.RPC.ResponseParser do
   alias Split.Telemetry
   alias Split.Treatment
 
-  @status_ok 0x01
-  @status_error 0x10
-
   @type splitd_response :: {:ok, map()} | {:error, term()}
 
   @doc """
