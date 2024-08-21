@@ -53,8 +53,6 @@ defmodule Split.Sockets.PoolTest do
 
       assert_received {[:split, :queue, :stop], ^ref, _,
                        %{message: ^message, pool_name: __MODULE__}}
-
-      :telemetry.detach(ref)
     end
 
     test "emits pool queue telemetry events when message fails" do
@@ -74,8 +72,6 @@ defmodule Split.Sockets.PoolTest do
 
       assert_received {[:split, :queue, :stop], ^ref, _,
                        %{message: ^message, error: :closed, pool_name: __MODULE__}}
-
-      :telemetry.detach(ref)
     end
 
     test "emits pool queue telemetry events when worker cannot be checked out" do
@@ -104,8 +100,6 @@ defmodule Split.Sockets.PoolTest do
                          stacktrace: _,
                          pool_name: __MODULE__
                        }}
-
-      :telemetry.detach(ref)
     end
 
     test "updates pool utilization metrics" do

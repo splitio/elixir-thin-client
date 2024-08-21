@@ -40,10 +40,11 @@ defmodule Split.Sockets.Conn do
   end
 
   @spec connect(t) :: {:ok, t()} | {:error, t(), term()}
-  def connect(%__MODULE__{socket: nil, socket_path: socket_path} = conn) do
+  def connect(%__MODULE__{socket: nil, socket_path: socket_path, opts: opts} = conn) do
     connect_timeout = Map.get(conn.opts, :connect_timeout, @default_connect_timeout)
 
-    connect_start = Telemetry.start(:connect, %{socket_path: socket_path})
+    connect_start =
+      Telemetry.start(:connect, %{socket_path: socket_path, pool_name: opts[:pool_name]})
 
     case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, connect_timeout) do
       {:ok, socket} ->
@@ -72,11 +73,16 @@ defmodule Split.Sockets.Conn do
   end
 
   @spec send_message(t(), term()) :: {:ok, t(), term()} | {:error, t(), term()}
-  def send_message(%__MODULE__{socket: nil} = conn, _message) do
-    {:error, conn, :socket_disconnected}
+  def send_message(%__MODULE__{socket: nil} = conn, message) do
+    error = :socket_disconnected
+    telemetry_meta = %{request: message}
+    send_start = Telemetry.start(:send, telemetry_meta)
+    Telemetry.stop(send_start, %{error: error})
+
+    {:error, conn, error}
   end
 
-  def send_message(conn, message) do
+  def send_message(%__MODULE__{} = conn, message) do
     payload = Encoder.encode(message)
     telemetry_meta = %{request: message}
     send_start = Telemetry.start(:send, telemetry_meta)

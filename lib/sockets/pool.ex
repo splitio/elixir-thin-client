@@ -68,7 +68,7 @@ defmodule Split.Sockets.Pool do
       )
     catch
       :exit, reason ->
-        Telemetry.exception(queue_start, :exit, reason, __STACKTRACE__, metadata)
+        Telemetry.exception(queue_start, :exit, reason, __STACKTRACE__)
 
         case reason do
           {:timeout, {NimblePool, :checkout, _affected_pids}} ->

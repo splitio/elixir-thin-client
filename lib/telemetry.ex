@@ -11,7 +11,11 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
-    * `system_time` - The system time when the event was emitted.
+    * `monotonic_time` - The time when the event was emitted.
+
+  #### Metadata
+
+    * `rpc_call` - The RPC call name.
 
   ### RPC Stop
 
@@ -19,7 +23,27 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
+    * `monotonic_time` - The time when the event was emitted.
     * `:duration` - Time taken from the RPC start event.
+
+  #### Metadata
+
+    * `rpc_call` - The RPC call name.
+    * `response` - The response from the RPC call.
+    * `error` - The error message if the RPC call fails.
+
+  ### RPC Fallback
+
+  `[:split, :rpc, :fallback]` - Emitted when an RPC call falls back to the fallback mechanism.
+
+  #### Measurements
+
+    * `monotonic_time` - The time when the event was emitted.
+
+  #### Metadata
+
+      * `rpc_call` - The RPC call name.
+      * `response` - The generated callback response from the RPC call.
 
   ### Queue Start
 
@@ -27,7 +51,12 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
-    * `system_time` - The system time when the event was emitted.
+    * `monotonic_time` - The time when the event was emitted.
+
+  #### Metadata
+
+    * `message` - The message being sent to the Splitd daemon.
+    * `pool_name` - The name of the pool being used.
 
   ### Queue Stop
 
@@ -35,7 +64,14 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
+    * `monotonic_time` - The time when the event was emitted.
     * `:duration` - The time taken to check out a pool connection.
+
+  #### Metadata
+
+    * `message` - The message being sent to the Splitd daemon.
+    * `pool_name` - The name of the pool being used.
+    * `error` - The error message if the RPC call fails.
 
   ### Queue Exception
 
@@ -43,7 +79,16 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
+    * `monotonic_time` - The time when the event was emitted.
     * `:duration` - The time taken since queue start event before raising an exception.
+
+  #### Metadata
+
+    * `message` - The message being sent to the Splitd daemon.
+    * `pool_name` - The name of the pool being used.
+    * `kind` - The exception type.
+    * `reason` - The exception reason.
+    * `stacktrace` - The exception stacktrace.
 
   ### Connect Start
 
@@ -51,7 +96,12 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
-    * `system_time` - The system time when the event was emitted.
+    * `monotonic_time` - The time when the event was emitted.
+
+  #### Metadata
+
+    * `socket_path` - The path to the socket file.
+    * `pool_name` - The name of the pool being used.
 
   ### Connect Stop
 
@@ -59,7 +109,14 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
+    * `monotonic_time` - The time when the event was emitted.
     * `:duration` - The time taken to establish a connection.
+
+  #### Metadata
+
+    * `socket_path` - The path to the socket file.
+    * `pool_name` - The name of the pool being used.
+    * `error` - The error message if the connection fails.
 
   ### Send Start
 
@@ -67,11 +124,52 @@ defmodule Split.Telemetry do
 
   #### Measurements
 
-    * `system_time` - The system time when the event was emitted.
+     * `monotonic_time` - The time when the event was emitted.
+
+  #### Metadata
+
+    * `request` - The message being sent to the Splitd daemon.
 
   ### Send Stop
 
   `[:split, :send, :stop]` - Emitted when a message is sent to the connected Splitd socket.
+
+  #### Measurements
+
+    * `monotonic_time` - The time when the event was emitted.
+    * `:duration` - The time taken to send a message.
+
+  #### Metadata
+
+    * `request` - The message being sent to the Splitd daemon.
+    * `error` - The error message if the message fails to send.
+
+  ### Receive Start
+
+  `[:split, :receive, :start]` - Emitted before receiving a message from the connected Splitd socket.
+
+  #### Measurements
+
+    * `monotonic_time` - The time when the event was emitted.
+
+  #### Metadata
+
+    * `request` - The message being received from the Splitd daemon.
+
+  ### Receive Stop
+
+  `[:split, :receive, :stop]` - Emitted when a message is received from the connected Splitd socket.
+
+  #### Measurements
+
+    * `monotonic_time` - The time when the event was emitted.
+    * `:duration` - The time taken to receive a message.
+
+  #### Metadata
+
+    * `request` - The message being received from the Splitd daemon.
+    * `response` - The response received from the Splitd daemon.
+    * `error` - The error message if the message fails to receive.
 
   ### Impression
 
@@ -144,15 +242,13 @@ defmodule Split.Telemetry do
           t(),
           atom(),
           term(),
-          Exception.stacktrace(),
-          :telemetry.event_metadata()
+          Exception.stacktrace()
         ) :: :ok
   def exception(
         start_event,
         kind,
         reason,
-        stacktrace,
-        extra_metadata \\ %{}
+        stacktrace
       ) do
     measurements = Map.put_new_lazy(%{}, :monotonic_time, &monotonic_time/0)
 
@@ -161,7 +257,6 @@ defmodule Split.Telemetry do
 
     metadata =
       start_event.start_metadata
-      |> Map.merge(extra_metadata)
       |> Map.merge(%{
         kind: kind,
         reason: reason,

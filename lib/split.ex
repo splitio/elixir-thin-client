@@ -127,7 +127,7 @@ defmodule Split do
         :ok
 
       {:ok, data} = response ->
-        Telemetry.stop(rpc_start, %{response: inspect(data)})
+        Telemetry.stop(rpc_start, %{response: data})
         response
 
       {:error, reason} = error ->

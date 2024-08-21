@@ -122,14 +122,10 @@ defmodule SplitThinElixirTest do
         ])
 
       {:ok, split} = Split.split("test-split")
-      split_string = inspect(split)
 
       assert_received {[:split, :rpc, :start], ^ref, _, %{rpc_call: :split}}
 
-      assert_received {[:split, :rpc, :stop], ^ref, _,
-                       %{rpc_call: :split, response: ^split_string}}
-
-      :telemetry.detach(ref)
+      assert_received {[:split, :rpc, :stop], ^ref, _, %{rpc_call: :split, response: ^split}}
     end
   end
 end
