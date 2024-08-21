@@ -120,7 +120,7 @@ defmodule Split do
 
     request
     |> Pool.send_message(opts)
-    |> ResponseParser.parse_response(request)
+    |> ResponseParser.parse_response(request, span_context: rpc_start)
     |> case do
       :ok ->
         Telemetry.stop(rpc_start)

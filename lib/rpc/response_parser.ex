@@ -15,15 +15,23 @@ defmodule Split.RPC.ResponseParser do
   @doc """
   Parses the response from the Splitd RPC calls.
   """
-  @spec parse_response(response :: splitd_response(), request :: Message.t()) ::
+  @spec parse_response(response :: splitd_response(), request :: Message.t(), [
+          {:span_context, Telemetry.t()}
+        ]) ::
           :ok
           | {:ok, map() | list() | Treatment.t() | Split.t() | nil}
           | {:error, term()}
           | :error
-  def parse_response({:ok, %{"s" => @status_ok, "p" => treatment_data}}, %Message{
-        o: opcode,
-        a: args
-      })
+  def parse_response(response, original_request, opts \\ [])
+
+  def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => treatment_data}},
+        %Message{
+          o: opcode,
+          a: args
+        },
+        _opts
+      )
       when opcode in [@get_treatment_opcode, @get_treatment_with_config_opcode] do
     treatment = Treatment.build_from_daemon_response(treatment_data)
     user_key = Enum.at(args, 0)
@@ -33,10 +41,14 @@ defmodule Split.RPC.ResponseParser do
     {:ok, treatment}
   end
 
-  def parse_response({:ok, %{"s" => @status_ok, "p" => %{"r" => treatments}}}, %Message{
-        o: opcode,
-        a: args
-      })
+  def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => %{"r" => treatments}}},
+        %Message{
+          o: opcode,
+          a: args
+        },
+        _opts
+      )
       when opcode in [@get_treatments_opcode, @get_treatments_with_config_opcode] do
     treatments = Enum.map(treatments, &Treatment.build_from_daemon_response/1)
     user_key = Enum.at(args, 0)
@@ -51,19 +63,31 @@ defmodule Split.RPC.ResponseParser do
     {:ok, mapped_treatments}
   end
 
-  def parse_response({:ok, %{"s" => @status_ok, "p" => payload}}, %Message{o: @split_opcode}) do
+  def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => payload}},
+        %Message{o: @split_opcode},
+        _opts
+      ) do
     {:ok, parse_split(payload)}
   end
 
-  def parse_response({:ok, %{"s" => @status_ok, "p" => %{"n" => split_names}}}, %Message{
-        o: @split_names_opcode
-      }) do
+  def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => %{"n" => split_names}}},
+        %Message{
+          o: @split_names_opcode
+        },
+        _opts
+      ) do
     {:ok, %{split_names: split_names}}
   end
 
-  def parse_response({:ok, %{"s" => @status_ok, "p" => %{"s" => splits}}}, %Message{
-        o: @splits_opcode
-      }) do
+  def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => %{"s" => splits}}},
+        %Message{
+          o: @splits_opcode
+        },
+        _opts
+      ) do
     splits =
       Enum.reduce(splits, [], fn split, acc ->
         [parse_split(split) | acc]
@@ -72,9 +96,13 @@ defmodule Split.RPC.ResponseParser do
     {:ok, splits}
   end
 
-  def parse_response({:ok, %{"s" => @status_ok, "p" => %{"s" => tracked?}}}, %Message{
-        o: @track_opcode
-      }) do
+  def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => %{"s" => tracked?}}},
+        %Message{
+          o: @track_opcode
+        },
+        _opts
+      ) do
     if tracked? do
       :ok
     else
@@ -82,36 +110,46 @@ defmodule Split.RPC.ResponseParser do
     end
   end
 
-  def parse_response({:ok, %{"s" => @status_error} = raw_response}, %Message{} = message) do
+  def parse_response(
+        {:ok, %{"s" => @status_error} = raw_response},
+        %Message{} = message,
+        opts
+      ) do
     Logger.error("Error response received from Splitd",
       request: inspect(message),
       response: inspect(raw_response)
     )
 
-    maybe_fallback({:error, :splitd_internal_error}, message)
+    maybe_fallback({:error, :splitd_internal_error}, message, opts)
   end
 
-  def parse_response({:ok, raw_response}, %Message{} = message) do
+  def parse_response({:ok, raw_response}, %Message{} = message, opts) do
     Logger.error("Unable to parse Splitd response",
       request: inspect(message),
       response: inspect(raw_response)
     )
 
-    maybe_fallback({:error, :splitd_parse_error}, message)
+    maybe_fallback({:error, :splitd_parse_error}, message, opts)
   end
 
-  def parse_response({:error, reason}, request) do
+  def parse_response({:error, reason}, request, opts) do
     Logger.error("Error while communicating with Splitd",
       request: inspect(request),
       reason: inspect(reason)
     )
 
-    maybe_fallback({:error, reason}, request)
+    maybe_fallback({:error, reason}, request, opts)
   end
 
-  defp maybe_fallback(response, original_request) do
+  defp maybe_fallback(response, original_request, opts) do
     if :persistent_term.get(:splitd_fallback_enabled, false) do
-      Fallback.fallback(original_request)
+      fallback_response = Fallback.fallback(original_request)
+
+      if Keyword.has_key?(opts, :span_context) do
+        Telemetry.span_event(opts[:span_context], :fallback, %{response: fallback_response})
+      end
+
+      fallback_response
     else
       response
     end

@@ -172,6 +172,18 @@ defmodule Split.Telemetry do
   end
 
   @doc """
+  Emits a one-off telemetry event.
+  """
+  @spec span_event(t(), atom(), :telemetry.event_measurements(), :telemetry.event_metadata()) ::
+          :ok
+  def span_event(start_event, name, metadata \\ %{}, measurements \\ %{}) do
+    measurements = Map.put_new_lazy(measurements, :monotonic_time, &monotonic_time/0)
+    metadata = Map.put(metadata, :telemetry_span_context, start_event.telemetry_span_context)
+
+    :telemetry.execute([@app_name, start_event.span_name, name], measurements, metadata)
+  end
+
+  @doc """
   Emits a telemetry `impression` event when a Split treatment has been evaluated.
   """
   @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
