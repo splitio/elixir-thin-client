@@ -31,7 +31,7 @@ defmodule Split.Sockets.Pool do
 
     NimblePool.start_link(
       worker: {__MODULE__, opts},
-      pool_size: opts[:pool_size],
+      pool_size: pool_size,
       lazy: false,
       worker_idle_timeout: :timer.minutes(30),
       name: pool_name
