@@ -267,6 +267,15 @@ defmodule Split.Telemetry do
   end
 
   @doc """
+  Wraps a function in a telemetry span.
+  """
+  @spec span(atom(), :telemetry.event_metadata(), :telemetry.span_function()) ::
+          :telemetry.span_result()
+  def span(span_name, metadata, function) do
+    :telemetry.span([@app_name, span_name], metadata, function)
+  end
+
+  @doc """
   Emits a one-off telemetry event.
   """
   @spec span_event(t(), atom(), :telemetry.event_measurements(), :telemetry.event_metadata()) ::

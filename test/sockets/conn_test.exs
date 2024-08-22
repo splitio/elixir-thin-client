@@ -33,7 +33,7 @@ defmodule Split.Sockets.ConnTest do
       Conn.new(socket_path) |> Conn.connect()
 
       assert_received {[:split, :connect, :start], ^ref, _, %{socket_path: ^socket_path}}
-      assert_received {[:split, :connect, :stop], ^ref, _, %{socket_path: ^socket_path}}
+      assert_received {[:split, :connect, :stop], ^ref, _, %{}}
     end
 
     test "emits telemetry events for registration message on connect", %{socket_path: socket_path} do
@@ -50,20 +50,12 @@ defmodule Split.Sockets.ConnTest do
       assert_received {[:split, :send, :start], ^ref, _,
                        %{request: %Message{v: 1, o: @register_opcode}}}
 
-      assert_received {[:split, :send, :stop], ^ref, _,
-                       %{
-                         request: %Message{v: 1, o: @register_opcode},
-                         response: %{"s" => @status_ok}
-                       }}
+      assert_received {[:split, :send, :stop], ^ref, _, %{response: %{"s" => @status_ok}}}
 
       assert_received {[:split, :receive, :start], ^ref, _,
                        %{request: %Message{v: 1, o: @register_opcode}}}
 
-      assert_received {[:split, :receive, :stop], ^ref, _,
-                       %{
-                         request: %Message{v: 1, o: @register_opcode},
-                         response: %{"s" => @status_ok}
-                       }}
+      assert_received {[:split, :receive, :stop], ^ref, _, %{response: %{"s" => @status_ok}}}
     end
 
     test "emits telemetry events for failed connection", %{
@@ -83,8 +75,7 @@ defmodule Split.Sockets.ConnTest do
 
       assert_received {[:split, :connect, :start], ^ref, _, %{socket_path: ^socket_path}}
 
-      assert_received {[:split, :connect, :stop], ^ref, _,
-                       %{error: ^reason, socket_path: ^socket_path}}
+      assert_received {[:split, :connect, :stop], ^ref, _, %{error: ^reason}}
     end
 
     test "emits telemetry events for successful message sending", %{socket_path: socket_path} do
@@ -102,7 +93,7 @@ defmodule Split.Sockets.ConnTest do
 
       assert_received {[:split, :send, :start], ^ref, _, %{request: ^message}}
 
-      assert_received {[:split, :send, :stop], ^ref, _, %{request: ^message, response: ^response}}
+      assert_received {[:split, :send, :stop], ^ref, _, %{response: ^response}}
     end
 
     test "emits telemetry events for failed message sending", %{
@@ -126,7 +117,7 @@ defmodule Split.Sockets.ConnTest do
 
       assert_received {[:split, :send, :start], ^ref, _, %{request: ^message}}
 
-      assert_received {[:split, :send, :stop], ^ref, _, %{error: ^reason, request: ^message}}
+      assert_received {[:split, :send, :stop], ^ref, _, %{error: ^reason}}
     end
 
     test "emits telemetry events for successful message receiving", %{socket_path: socket_path} do
@@ -144,8 +135,7 @@ defmodule Split.Sockets.ConnTest do
 
       assert_received {[:split, :receive, :start], ^ref, _, %{request: ^message}}
 
-      assert_received {[:split, :receive, :stop], ^ref, _,
-                       %{request: ^message, response: ^response}}
+      assert_received {[:split, :receive, :stop], ^ref, _, %{response: ^response}}
     end
 
     test "emits telemetry events for failed message receiving", %{socket_path: socket_path} do
@@ -169,7 +159,7 @@ defmodule Split.Sockets.ConnTest do
 
       assert_received {[:split, :receive, :start], ^ref, _, %{request: ^message}}
 
-      assert_received {[:split, :receive, :stop], ^ref, _, %{request: ^message, error: :closed}}
+      assert_received {[:split, :receive, :stop], ^ref, _, %{error: :closed}}
     end
   end
 end
