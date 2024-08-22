@@ -54,13 +54,13 @@ defmodule Split.Sockets.Pool do
         pool_name,
         :checkout,
         fn caller, {state, conn} ->
+          Telemetry.stop(queue_start, metadata)
+
           with {:ok, conn} <- Conn.connect(conn),
                {:ok, conn, resp} <- Conn.send_message(conn, message) do
-            Telemetry.stop(queue_start, metadata)
             {{:ok, resp}, update_if_open(conn, state, caller)}
           else
             {:error, conn, error} ->
-              Telemetry.stop(queue_start, Map.put(metadata, :error, error))
               {{:error, error}, update_if_open(conn, state, caller)}
           end
         end,
