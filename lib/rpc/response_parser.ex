@@ -16,7 +16,7 @@ defmodule Split.RPC.ResponseParser do
   Parses the response from the Splitd RPC calls.
   """
   @spec parse_response(response :: splitd_response(), request :: Message.t(), [
-          {:span_context, Telemetry.t()}
+          {:span_context, reference()} | {:span_context, nil}
         ]) ::
           :ok
           | {:ok, map() | list() | Treatment.t() | Split.t() | nil}
@@ -146,7 +146,9 @@ defmodule Split.RPC.ResponseParser do
       fallback_response = Fallback.fallback(original_request)
 
       if Keyword.has_key?(opts, :span_context) do
-        Telemetry.span_event(opts[:span_context], :fallback, %{response: fallback_response})
+        Telemetry.span_event([:rpc, :fallback], opts[:span_context], %{
+          response: fallback_response
+        })
       end
 
       fallback_response

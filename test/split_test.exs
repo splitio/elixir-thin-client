@@ -125,7 +125,7 @@ defmodule SplitThinElixirTest do
 
       assert_received {[:split, :rpc, :start], ^ref, _, %{rpc_call: :split}}
 
-      assert_received {[:split, :rpc, :stop], ^ref, _, %{rpc_call: :split, response: ^split}}
+      assert_received {[:split, :rpc, :stop], ^ref, _, %{response: ^split}}
     end
   end
 end

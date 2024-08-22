@@ -3,7 +3,6 @@ defmodule Split.RPC.ResponseParserTest do
   use Split.RPC.Opcodes
 
   alias Split.RPC.Fallback
-  alias Split.Telemetry
   alias Split.RPC.ResponseParser
   alias Split.RPC.Message
   alias Split.Treatment
@@ -403,20 +402,16 @@ defmodule Split.RPC.ResponseParserTest do
 
       ref =
         :telemetry_test.attach_event_handlers(self(), [
-          [:split, :test_fallback, :start],
-          [:split, :test_fallback, :fallback]
+          [:split, :rpc, :fallback]
         ])
 
-      span = Telemetry.start(:test_fallback)
-      telemetry_span_context = span.telemetry_span_context
+      telemetry_span_context = :erlang.make_ref()
 
-      assert ResponseParser.parse_response(response, message, span_context: span) ==
-               expected_fallback
+      assert ResponseParser.parse_response(response, message,
+               span_context: telemetry_span_context
+             ) == expected_fallback
 
-      assert_received {[:split, :test_fallback, :start], ^ref, _,
-                       %{telemetry_span_context: ^telemetry_span_context}}
-
-      assert_received {[:split, :test_fallback, :fallback], ^ref, _,
+      assert_received {[:split, :rpc, :fallback], ^ref, _,
                        %{
                          telemetry_span_context: ^telemetry_span_context,
                          response: ^expected_fallback

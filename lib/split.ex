@@ -112,27 +112,27 @@ defmodule Split do
   end
 
   defp execute_rpc(request, opts \\ []) do
+    telemetry_span_context = :erlang.make_ref()
+
     metadata = %{
-      rpc_call: Message.opcode_to_rpc_name(request.o)
+      rpc_call: Message.opcode_to_rpc_name(request.o),
+      telemetry_span_context: telemetry_span_context
     }
 
-    rpc_start = Telemetry.start(:rpc, metadata)
+    Telemetry.span(:rpc, metadata, fn ->
+      request
+      |> Pool.send_message(opts)
+      |> ResponseParser.parse_response(request, span_context: telemetry_span_context)
+      |> case do
+        :ok ->
+          {:ok, %{}}
 
-    request
-    |> Pool.send_message(opts)
-    |> ResponseParser.parse_response(request, span_context: rpc_start)
-    |> case do
-      :ok ->
-        Telemetry.stop(rpc_start)
-        :ok
+        {:ok, data} = response ->
+          {response, %{response: data}}
 
-      {:ok, data} = response ->
-        Telemetry.stop(rpc_start, %{response: data})
-        response
-
-      {:error, reason} = error ->
-        Telemetry.stop(rpc_start, %{error: reason})
-        error
-    end
+        {:error, reason} = error ->
+          {error, %{error: reason}}
+      end
+    end)
   end
 end
