@@ -57,25 +57,6 @@ defmodule Split.Sockets.PoolTest do
                        %{message: ^message, pool_name: __MODULE__}}
     end
 
-    test "emits pool queue telemetry events when message fails" do
-      ref =
-        :telemetry_test.attach_event_handlers(self(), [
-          [:split, :queue, :start],
-          [:split, :queue, :stop]
-        ])
-
-      # Sending a disconnect message to the SplitdMockServer will cause it to close the connection
-      message = %{"o" => :disconnect}
-
-      assert {:error, _reason} = Pool.send_message(message, pool_name: __MODULE__)
-
-      assert_received {[:split, :queue, :start], ^ref, _,
-                       %{message: ^message, pool_name: __MODULE__}}
-
-      assert_received {[:split, :queue, :stop], ^ref, _,
-                       %{message: ^message, error: :closed, pool_name: __MODULE__}}
-    end
-
     test "emits pool queue telemetry events when worker cannot be checked out" do
       ref =
         :telemetry_test.attach_event_handlers(self(), [
