@@ -5,8 +5,17 @@ defmodule SplitThinElixirTest do
   alias Split.Sockets.Supervisor
   alias Split.Treatment
 
-  setup_all do
-    start_supervised!({Supervisor, %{socket_path: "/tmp/elixir-splitd.sock"}})
+  setup_all context do
+    test_id = :erlang.phash2(context.case)
+    socket_path = "/tmp/test-splitd-#{test_id}.sock"
+
+    start_supervised!(
+      {Split.Test.MockSplitdServer, socket_path: socket_path, name: :"test-#{test_id}"}
+    )
+
+    Split.Test.MockSplitdServer.wait_until_listening(socket_path)
+
+    start_supervised!({Supervisor, %{socket_path: socket_path}})
 
     :ok
   end
@@ -102,5 +111,21 @@ defmodule SplitThinElixirTest do
 
   test "splits/0" do
     assert {:ok, [%Split{name: "test-split"}]} = Split.splits()
+  end
+
+  describe "telemetry" do
+    test "emits telemetry spans for rpc calls" do
+      ref =
+        :telemetry_test.attach_event_handlers(self(), [
+          [:split, :rpc, :start],
+          [:split, :rpc, :stop]
+        ])
+
+      {:ok, split} = Split.split("test-split")
+
+      assert_received {[:split, :rpc, :start], ^ref, _, %{rpc_call: :split}}
+
+      assert_received {[:split, :rpc, :stop], ^ref, _, %{response: ^split}}
+    end
   end
 end

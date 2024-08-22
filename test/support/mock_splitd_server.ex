@@ -3,43 +3,60 @@ defmodule Split.Test.MockSplitdServer do
 
   require Logger
 
-  @socket_path "/tmp/elixir-splitd.sock"
-
   def start_link(opts) do
-    Supervisor.start_link(__MODULE__, opts)
+    name = Keyword.get(opts, :name, __MODULE__)
+
+    Supervisor.start_link(__MODULE__, opts, name: name)
   end
 
   @impl Supervisor
-  def init(_opts \\ []) do
+  def init(opts \\ []) do
+    socket_path = Keyword.get(opts, :socket_path)
+    name = Keyword.get(opts, :name, __MODULE__)
+    opts = Keyword.put_new(opts, :name, name)
+
+    File.rm(socket_path)
+
     children = [
-      {Task.Supervisor, strategy: :one_for_one, name: TestTaskSupervisor},
-      {Task, fn -> accept() end}
+      {Task.Supervisor, strategy: :one_for_one, name: :"#{name}-task-supervisor"},
+      {Task, fn -> accept(opts) end}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def accept() do
+  def accept(opts) do
+    socket_path = Keyword.get(opts, :socket_path)
+
     {:ok, socket} =
       :gen_tcp.listen(0,
         active: false,
         packet: :raw,
         reuseaddr: true,
-        ifaddr: {:local, @socket_path}
+        ifaddr: {:local, socket_path}
       )
 
-    loop_acceptor(socket)
+    loop_acceptor(socket, opts)
   end
 
-  defp loop_acceptor(socket) do
+  def wait_until_listening(socket_path) do
+    if File.exists?(socket_path) do
+      :ok
+    else
+      Process.sleep(1)
+      wait_until_listening(socket_path)
+    end
+  end
+
+  defp loop_acceptor(socket, opts) do
     {:ok, client} = :gen_tcp.accept(socket)
 
     {:ok, _pid} =
-      Task.Supervisor.start_child(TestTaskSupervisor, __MODULE__, :serve, [
+      Task.Supervisor.start_child(:"#{opts[:name]}-task-supervisor", __MODULE__, :serve, [
         client
       ])
 
-    loop_acceptor(socket)
+    loop_acceptor(socket, opts)
   end
 
   def serve(client) do
@@ -48,13 +65,30 @@ defmodule Split.Test.MockSplitdServer do
         payload = Enum.slice(data, 4..-1//1)
         unpacked_payload = Msgpax.unpack!(payload)
 
-        response = build_response(Map.get(unpacked_payload, "o"))
-        packed_message = Msgpax.pack!(response, iodata: false)
+        case build_response(Map.get(unpacked_payload, "o")) do
+          response when is_map(response) ->
+            packed_message = Msgpax.pack!(response, iodata: false)
 
-        payload =
-          <<byte_size(packed_message)::integer-unsigned-little-size(32), packed_message::binary>>
+            payload =
+              <<byte_size(packed_message)::integer-unsigned-little-size(32),
+                packed_message::binary>>
 
-        :ok = :gen_tcp.send(client, payload)
+            :ok = :gen_tcp.send(client, payload)
+
+          {:error, :disconnect} ->
+            :gen_tcp.shutdown(client, :read)
+
+          {:error, :wait} ->
+            # Wait for a bit before sending a basic sucessful response
+            Process.sleep(2)
+
+            resp = Msgpax.pack!(%{"s" => 1}, iodata: false)
+
+            payload = <<byte_size(resp)::integer-unsigned-little-size(32), resp::binary>>
+
+            :ok = :gen_tcp.send(client, payload)
+        end
+
         serve(client)
 
       _other ->
@@ -109,4 +143,7 @@ defmodule Split.Test.MockSplitdServer do
       }
     }
   end
+
+  defp build_response("disconnect"), do: {:error, :disconnect}
+  defp build_response("wait"), do: {:error, :wait}
 end

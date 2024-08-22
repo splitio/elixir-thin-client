@@ -5,6 +5,7 @@ defmodule Split.Sockets.Conn do
   require Logger
   alias Split.RPC.Message
   alias Split.RPC.Encoder
+  alias Split.Telemetry
 
   @type t :: %__MODULE__{
           socket: port() | nil,
@@ -39,24 +40,28 @@ defmodule Split.Sockets.Conn do
   end
 
   @spec connect(t) :: {:ok, t()} | {:error, t(), term()}
-  def connect(%__MODULE__{socket: nil, socket_path: socket_path} = conn) do
-    case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, @default_connect_timeout) do
-      {:ok, socket} ->
-        conn = %{conn | socket: socket}
+  def connect(%__MODULE__{socket: nil, socket_path: socket_path, opts: opts} = conn) do
+    connect_timeout = Map.get(conn.opts, :connect_timeout, @default_connect_timeout)
 
-        case send_message(conn, Message.register()) do
-          {:ok, _conn, _resp} ->
-            {:ok, conn}
+    Telemetry.span(:connect, %{socket_path: socket_path, pool_name: opts[:pool_name]}, fn ->
+      case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, connect_timeout) do
+        {:ok, socket} ->
+          conn = %{conn | socket: socket}
 
-          {:error, _conn, reason} ->
-            Logger.error("Error sending registration message: #{inspect(reason)}")
-            {:error, %{conn | socket: nil}, reason}
-        end
+          case send_message(conn, Message.register()) do
+            {:ok, _conn, _resp} ->
+              {{:ok, conn}, %{}}
 
-      {:error, reason} ->
-        Logger.error("Error establishing socket connection: #{inspect(reason)}")
-        {:error, conn, reason}
-    end
+            {:error, conn, reason} ->
+              Logger.error("Error sending registration message: #{inspect(reason)}")
+              {{:error, disconnect(conn), reason}, %{error: reason}}
+          end
+
+        {:error, reason} ->
+          Logger.error("Error establishing socket connection: #{inspect(reason)}")
+          {{:error, conn, reason}, %{error: reason}}
+      end
+    end)
   end
 
   def connect(conn) do
@@ -64,23 +69,26 @@ defmodule Split.Sockets.Conn do
   end
 
   @spec send_message(t(), term()) :: {:ok, t(), term()} | {:error, t(), term()}
-  def send_message(%__MODULE__{socket: nil} = conn, _message) do
-    {:error, conn, :socket_disconnected}
+  def send_message(%__MODULE__{socket: nil} = conn, message) do
+    Telemetry.span(:send, %{request: message}, fn ->
+      {{:error, conn, :socket_disconnected}, %{error: :socket_disconnected}}
+    end)
   end
 
-  def send_message(conn, message) do
+  def send_message(%__MODULE__{} = conn, message) do
     payload = Encoder.encode(message)
+    telemetry_meta = %{request: message}
 
-    with :ok <- :gen_tcp.send(conn.socket, payload),
-         {:ok, <<response_size::little-unsigned-size(32)>>} <-
-           :gen_tcp.recv(conn.socket, 4, @default_rcv_timeout),
-         {:ok, response} <- :gen_tcp.recv(conn.socket, response_size, @default_rcv_timeout) do
-      {:ok, conn, Msgpax.unpack!(response)}
-    else
-      {:error, reason} ->
-        Logger.error("Error receiving response: #{inspect(reason)}")
-        {:error, conn, reason}
-    end
+    Telemetry.span(:send, telemetry_meta, fn ->
+      with :ok <- :gen_tcp.send(conn.socket, payload),
+           {:ok, response} <- receive_response(conn, telemetry_meta, @default_rcv_timeout) do
+        {{:ok, conn, response}, %{response: response}}
+      else
+        {:error, reason} ->
+          Logger.error("Error receiving response: #{inspect(reason)}")
+          {{:error, conn, reason}, %{error: reason}}
+      end
+    end)
   end
 
   @spec transfer_ownership(t(), pid) :: {:ok, t()} | {:error, term()}
@@ -107,5 +115,19 @@ defmodule Split.Sockets.Conn do
   def disconnect(%__MODULE__{socket: socket} = conn) do
     :gen_tcp.close(socket)
     %{conn | socket: nil}
+  end
+
+  defp receive_response(conn, telemetry_meta, timeout) do
+    Telemetry.span(:receive, telemetry_meta, fn ->
+      with {:ok, <<response_size::little-unsigned-size(32)>>} <-
+             :gen_tcp.recv(conn.socket, 4, timeout),
+           {:ok, response} <- :gen_tcp.recv(conn.socket, response_size, timeout),
+           {:ok, unpacked_response} <- Msgpax.unpack(response) do
+        {{:ok, unpacked_response}, %{response: unpacked_response}}
+      else
+        {:error, reason} ->
+          {{:error, reason}, %{error: reason}}
+      end
+    end)
   end
 end

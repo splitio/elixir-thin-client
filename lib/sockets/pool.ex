@@ -4,6 +4,10 @@ defmodule Split.Sockets.Pool do
   @behaviour NimblePool
 
   alias Split.Sockets.Conn
+  alias Split.Sockets.PoolMetrics
+  alias Split.Telemetry
+
+  @default_checkout_timeout 1000
 
   def child_spec(opts) do
     %{
@@ -15,33 +19,72 @@ defmodule Split.Sockets.Pool do
   def start_link(opts) do
     fallback_enabled = Map.get(opts, :fallback_enabled, false)
     :persistent_term.put(:splitd_fallback_enabled, fallback_enabled)
-    opts = Map.put_new(opts, :fallback_enabled, fallback_enabled)
-    default_pool_size = System.schedulers_online()
+
+    pool_name = Map.get(opts, :pool_name, __MODULE__)
+    pool_size = Map.get(opts, :pool_size, System.schedulers_online())
+
+    opts =
+      opts
+      |> Map.put_new(:fallback_enabled, fallback_enabled)
+      |> Map.put_new(:pool_size, pool_size)
+      |> Map.put_new(:pool_name, pool_name)
 
     NimblePool.start_link(
       worker: {__MODULE__, opts},
-      pool_size: Map.get(opts, :pool_size, default_pool_size),
+      pool_size: pool_size,
       lazy: false,
       worker_idle_timeout: :timer.minutes(30),
-      name: __MODULE__
+      name: pool_name
     )
   end
 
-  def send_message(message, checkout_timeout \\ 1000) do
-    NimblePool.checkout!(
-      __MODULE__,
-      :checkout,
-      fn caller, {state, conn} ->
-        with {:ok, conn} <- Conn.connect(conn),
-             {:ok, conn, resp} <- Conn.send_message(conn, message) do
-          {{:ok, resp}, update_if_open(conn, state, caller)}
-        else
-          {:error, conn, error} ->
-            {{:error, error}, update_if_open(conn, state, caller)}
+  def send_message(message, opts \\ []) do
+    pool_name = Keyword.get(opts, :pool_name, __MODULE__)
+    checkout_timeout = Keyword.get(opts, :checkout_timeout, @default_checkout_timeout)
+
+    metadata = %{
+      pool_name: pool_name,
+      message: message
+    }
+
+    queue_start = Telemetry.start(:queue, metadata)
+
+    try do
+      NimblePool.checkout!(
+        pool_name,
+        :checkout,
+        fn caller, {state, conn} ->
+          Telemetry.stop(queue_start, metadata)
+
+          with {:ok, conn} <- Conn.connect(conn),
+               {:ok, conn, resp} <- Conn.send_message(conn, message) do
+            {{:ok, resp}, update_if_open(conn, state, caller)}
+          else
+            {:error, conn, error} ->
+              {{:error, error}, update_if_open(conn, state, caller)}
+          end
+        end,
+        checkout_timeout
+      )
+    catch
+      :exit, reason ->
+        Telemetry.exception(queue_start, :exit, reason, __STACKTRACE__)
+
+        case reason do
+          {:timeout, {NimblePool, :checkout, _affected_pids}} ->
+            Logger.error("""
+            The Split SDK was unable to provide a connection within the timeout (#{checkout_timeout} milliseconds) \
+            due to excess queuing for connections. Consider adjusting the pool size, checkout_timeout or reducing the \
+            rate of requests if it is possible that the splitd service is unable to keep up \
+            with the current rate.
+            """)
+
+            {:error, reason}
+
+          _ ->
+            {:error, reason}
         end
-      end,
-      checkout_timeout
-    )
+    end
   end
 
   defp update_if_open(conn, state, caller) do
@@ -67,21 +110,25 @@ defmodule Split.Sockets.Pool do
       """)
     end
 
-    {:ok, opts}
+    {:ok, metrics_ref} = PoolMetrics.init(opts[:pool_name], opts[:pool_size])
+
+    {:ok, {opts, metrics_ref}}
   end
 
   @impl NimblePool
-  def init_worker(%{socket_path: socket_path} = opts) do
-    {:ok, Conn.new(socket_path, opts), opts}
+  def init_worker({%{socket_path: socket_path} = opts, _metrics_ref} = pool_state) do
+    {:ok, Conn.new(socket_path, opts), pool_state}
   end
 
   @impl NimblePool
-  def handle_checkout(:checkout, _from, %{socket: nil} = conn, pool_state) do
+  def handle_checkout(:checkout, _from, %{socket: nil} = conn, {_opts, metrics_ref} = pool_state) do
+    PoolMetrics.update(metrics_ref, {:connections_in_use, 1})
     {:ok, {:new, conn}, conn, pool_state}
   end
 
-  def handle_checkout(:checkout, _from, conn, pool_state) do
+  def handle_checkout(:checkout, _from, conn, {_opts, metrics_ref} = pool_state) do
     if Conn.is_open?(conn) do
+      PoolMetrics.update(metrics_ref, {:connections_in_use, 1})
       {:ok, {:reused, conn}, conn, pool_state}
     else
       {:remove, :closed, pool_state}
@@ -89,7 +136,9 @@ defmodule Split.Sockets.Pool do
   end
 
   @impl NimblePool
-  def handle_checkin(checkin, _from, _old_conn, pool_state) do
+  def handle_checkin(checkin, _from, _old_conn, {_opts, metrics_ref} = pool_state) do
+    PoolMetrics.update(metrics_ref, {:connections_in_use, -1})
+
     with {:ok, conn} <- checkin,
          true <- Conn.is_open?(conn) do
       {:ok, conn, pool_state}
@@ -114,6 +163,14 @@ defmodule Split.Sockets.Pool do
     Conn.disconnect(conn)
     {:ok, pool_state}
   end
+
+  @impl NimblePool
+  def handle_cancelled(:checked_out, {_opts, metrics_ref} = _pool_state) do
+    PoolMetrics.update(metrics_ref, {:connections_in_use, -1})
+    :ok
+  end
+
+  def handle_cancelled(:queued, _pool_state), do: :ok
 
   @impl NimblePool
   def handle_ping(_conn, _pool_state) do

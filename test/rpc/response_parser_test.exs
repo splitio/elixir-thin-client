@@ -2,6 +2,7 @@ defmodule Split.RPC.ResponseParserTest do
   use ExUnit.Case, async: false
   use Split.RPC.Opcodes
 
+  alias Split.RPC.Fallback
   alias Split.RPC.ResponseParser
   alias Split.RPC.Message
   alias Split.Treatment
@@ -387,6 +388,34 @@ defmodule Split.RPC.ResponseParserTest do
                            }
                          }}
              end) =~ "Error while communicating with Splitd"
+    end
+
+    test "emits fallback telemetry event if span_context is passed" do
+      message = %Message{
+        o: @get_treatments_with_config_opcode,
+        a: ["user_key", "bucketing_key", ["feature_name1"]]
+      }
+
+      response = {:error, :enoent}
+
+      expected_fallback = Fallback.fallback(message)
+
+      ref =
+        :telemetry_test.attach_event_handlers(self(), [
+          [:split, :rpc, :fallback]
+        ])
+
+      telemetry_span_context = :erlang.make_ref()
+
+      assert ResponseParser.parse_response(response, message,
+               span_context: telemetry_span_context
+             ) == expected_fallback
+
+      assert_received {[:split, :rpc, :fallback], ^ref, _,
+                       %{
+                         telemetry_span_context: ^telemetry_span_context,
+                         response: ^expected_fallback
+                       }}
     end
   end
 

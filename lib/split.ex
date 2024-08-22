@@ -2,6 +2,7 @@ defmodule Split do
   @moduledoc """
   Documentation for `Split`.
   """
+  alias Split.Telemetry
   alias Split.Sockets.Pool
   alias Split.Treatment
   alias Split.RPC.Message
@@ -110,24 +111,27 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  defp execute_rpc(request) do
+  defp execute_rpc(request, opts \\ []) do
+    telemetry_span_context = :erlang.make_ref()
+
     metadata = %{
-      rpc_call: Message.opcode_to_rpc_name(request.o)
+      rpc_call: Message.opcode_to_rpc_name(request.o),
+      telemetry_span_context: telemetry_span_context
     }
 
-    :telemetry.span([:split, :rpc], metadata, fn ->
+    Telemetry.span(:rpc, metadata, fn ->
       request
-      |> Pool.send_message()
-      |> ResponseParser.parse_response(request)
+      |> Pool.send_message(opts)
+      |> ResponseParser.parse_response(request, span_context: telemetry_span_context)
       |> case do
-        {:ok, data} = response ->
-          {response, Map.put(metadata, :response, inspect(data))}
-
         :ok ->
-          {:ok, metadata}
+          {:ok, %{}}
+
+        {:ok, data} = response ->
+          {response, %{response: data}}
 
         {:error, reason} = error ->
-          {error, Map.put(metadata, :error, reason)}
+          {error, %{error: reason}}
       end
     end)
   end
