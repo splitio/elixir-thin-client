@@ -86,7 +86,7 @@ defmodule Split.Sockets.PoolTest do
     end
 
     test "updates pool utilization metrics" do
-      # Sending a wait message to the SplitdMockServer will cause it to sleep for 1 millisecond before responding
+      # Send a wait message to the SplitdMockServer to cause it to sleep for 1 millisecond before responding
       message = %{"o" => :wait}
 
       {:ok, _response} = Pool.send_message(message, pool_name: __MODULE__)
@@ -110,7 +110,6 @@ defmodule Split.Sockets.PoolTest do
     end
   end
 
-  # Waits an an arbitrary amount of milliseconds;
-  # enough for the connection to be returned back to the pool.
+  # Wait 5 milliseconds, enough time for the connection to be returned back to the pool.
   defp wait_connection_checkin(), do: Process.sleep(5)
 end

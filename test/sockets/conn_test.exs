@@ -68,7 +68,7 @@ defmodule Split.Sockets.ConnTest do
           [:split, :connect, :stop]
         ])
 
-      # Stop the mocked splitd socket so the connection errors
+      # Stop the mocked splitd socket to receive connection errors
       :ok = stop_supervised(splitd_name)
 
       assert {:error, _conn, reason} = Conn.new(socket_path) |> Conn.connect()
@@ -110,7 +110,7 @@ defmodule Split.Sockets.ConnTest do
 
       message = Message.get_treatment(user_key: "user-id", feature_name: "feature")
 
-      # Stop the mocked splitd server so the message sending errors
+      # Stop the mocked splitd socket to receive connection errors
       :ok = stop_supervised(splitd_name)
 
       assert {:error, _conn, reason} = Conn.send_message(conn, message)
@@ -147,15 +147,13 @@ defmodule Split.Sockets.ConnTest do
 
       {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
 
-      # receive the  registration messages
+      # receive the registration messages
       assert_received {[:split, :receive, :start], ^ref, _, %{}}
       assert_received {[:split, :receive, :stop], ^ref, _, %{response: %{"s" => @status_ok}}}
 
-      # make the splitd server close the connection before we receive the response
+      # disconnect the splitd connection before we receive a response
       message = %{"o" => :disconnect}
       Conn.send_message(conn, message)
-
-      # Stop the mocked splitd server so the message receiving errors
 
       assert_received {[:split, :receive, :start], ^ref, _, %{request: ^message}}
 
