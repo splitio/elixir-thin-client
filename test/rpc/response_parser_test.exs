@@ -360,7 +360,7 @@ defmodule Split.RPC.ResponseParserTest do
                          %Split.Treatment{
                            change_number: nil,
                            config: nil,
-                           label: nil,
+                           label: "fallback treatment",
                            timestamp: nil,
                            treatment: "control"
                          }}
@@ -381,7 +381,7 @@ defmodule Split.RPC.ResponseParserTest do
                          %{
                            "feature_name1" => %Split.Treatment{
                              treatment: "control",
-                             label: nil,
+                             label: "fallback treatment",
                              config: nil,
                              change_number: nil,
                              timestamp: nil
