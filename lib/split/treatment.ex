@@ -1,11 +1,9 @@
 defmodule Split.Treatment do
-  defstruct [
-    :treatment,
-    label: nil,
-    config: nil,
-    change_number: nil,
-    timestamp: nil
-  ]
+  defstruct treatment: "control",
+            label: nil,
+            config: nil,
+            change_number: nil,
+            timestamp: nil
 
   @type t :: %__MODULE__{
           treatment: String.t(),
