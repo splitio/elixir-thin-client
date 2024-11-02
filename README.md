@@ -27,14 +27,14 @@ Then you can start the Elixir Split Thin Client, either in your supervision tree
 
 ```elixir
 children = [
-  {Split.Sockets.Supervisor, opts}
+  {Split.Supervisor, opts}
 ]
 ```
 
 Or by starting it manually:
 
 ```elixir
-Split.Sockets.Supervisor.start_link(opts)
+Split.Supervisor.start_link(opts)
 ```
 
 Where `opts` is a keyword list with the following options:

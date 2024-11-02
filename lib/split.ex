@@ -1,6 +1,31 @@
 defmodule Split do
   @moduledoc """
-  Documentation for `Split`.
+  The Split.io Elixir thin client.
+
+  This module provides a simple API to interact with the Split.io service
+  via the [Split Daemon (splitd)](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd).
+
+  ## Adding Split to Your Supervision Tree
+
+  The most basic approach is to add `Split` as a child of your application's
+  top-most supervisor, i.e. `lib/my_app/application.ex.
+
+  ```elixir
+  defmodule MyApp.Application do
+    use Application
+
+    def start(_type, _args) do
+      children = [
+        # ... other children ...
+        {Split, [socket_path: "/var/run/split.sock", fallback_enabled: true}
+      ]
+
+      opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+      Supervisor.start_link(children, opts)
+    end
+  end
+  ```
+
   """
   alias Split.Telemetry
   alias Split.Sockets.Pool
@@ -19,6 +44,13 @@ defmodule Split do
           flag_sets: [String.t()]
         }
 
+  @typedoc "An option that can be provided when starting `Split`."
+  @type option ::
+          {:socket_path, String.t()}
+          | {:fallback_enabled, boolean()}
+
+  @type options :: [option()]
+
   defstruct [
     :name,
     :traffic_type,
@@ -29,6 +61,16 @@ defmodule Split do
     :default_treatment,
     :flag_sets
   ]
+
+  @doc """
+  Builds a child specification to use in a Supervisor.
+
+  Normally not called directly by your code. Instead, it will be
+  called by your application's Supervisor once you add `Split`
+  to its supervision tree.
+  """
+  @spec child_spec(options()) :: Supervisor.child_spec()
+  defdelegate child_spec(options), to: Split.Supervisor
 
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
           {:ok, Treatment.t()} | {:error, term()}
