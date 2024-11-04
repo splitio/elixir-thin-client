@@ -8,7 +8,7 @@ defmodule Split do
   ## Adding Split to Your Supervision Tree
 
   The most basic approach is to add `Split` as a child of your application's
-  top-most supervisor, i.e. `lib/my_app/application.ex.
+  top-most supervisor, i.e. `lib/my_app/application.ex`.
 
   ```elixir
   defmodule MyApp.Application do
@@ -39,7 +39,7 @@ defmodule Split do
   - `:socket_path`: **REQUIRED** The path to the splitd socket file. For example `/var/run/splitd.sock`.
   - `:fallback_enabled`: **OPTIONAL** A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
   - `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
-  - `connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
+  - `:connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
 
 
   ## Using the API
@@ -71,6 +71,8 @@ defmodule Split do
   @type option ::
           {:socket_path, String.t()}
           | {:fallback_enabled, boolean()}
+          | {:pool_size, non_neg_integer()}
+          | {:connect_timeout, non_neg_integer()}
 
   @type options :: [option()]
 
