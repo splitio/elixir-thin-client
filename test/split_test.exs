@@ -14,7 +14,7 @@ defmodule SplitThinElixirTest do
 
     Split.Test.MockSplitdServer.wait_until_listening(socket_path)
 
-    start_supervised!({Split, %{socket_path: socket_path}})
+    start_supervised!({Split, socket_path: socket_path})
 
     :ok
   end

@@ -25,7 +25,6 @@ defmodule Split do
     end
   end
   ```
-
   """
   alias Split.Telemetry
   alias Split.Sockets.Pool

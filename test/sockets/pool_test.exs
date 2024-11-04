@@ -17,7 +17,7 @@ defmodule Split.Sockets.PoolTest do
 
     Split.Test.MockSplitdServer.wait_until_listening(socket_path)
 
-    start_supervised!({Split, %{socket_path: socket_path, pool_name: __MODULE__, pool_size: 10}})
+    start_supervised!({Split, socket_path: socket_path, pool_name: __MODULE__, pool_size: 10})
 
     :ok
   end
