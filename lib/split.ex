@@ -25,6 +25,30 @@ defmodule Split do
     end
   end
   ```
+
+  You can also start `Split` dynamically by calling `Split.Supervisor.start_link/1`:
+
+  ```elixir
+  Split.Supervisor.start_link(opts)
+  ```
+
+  ### Options
+
+  `Split` takes a number of keyword arguments as options when starting. The following options are available:
+
+  - `:socket_path`: **REQUIRED** The path to the splitd socket file. For example `/var/run/splitd.sock`.
+  - `:fallback_enabled`: **OPTIONAL** A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
+  - `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
+  - `connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
+
+
+  ## Using the API
+
+  Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon to access feature flags and configurations.
+
+  ```elixir
+  Split.get_treatment("user_key", "feature_name")
+  ```
   """
   alias Split.Telemetry
   alias Split.Sockets.Pool
