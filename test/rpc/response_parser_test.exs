@@ -177,9 +177,10 @@ defmodule Split.RPC.ResponseParserTest do
                   killed: false,
                   treatments: ["treatment_a", "treatment_b", "treatment_c"],
                   change_number: 1_499_375_079_065,
-                  configurations: %{},
+                  configs: %{},
                   default_treatment: "treatment_a",
-                  flag_sets: []
+                  sets: [],
+                  impressions_disabled: false
                 }}
     end
 
@@ -233,9 +234,10 @@ defmodule Split.RPC.ResponseParserTest do
                     killed: false,
                     treatments: ["treatment_a", "treatment_b", "treatment_c"],
                     change_number: 1_499_375_079_065,
-                    configurations: %{},
+                    configs: %{},
                     default_treatment: "treatment_a",
-                    flag_sets: []
+                    sets: [],
+                    impressions_disabled: false
                   },
                   %Split{
                     name: "feature_b",
@@ -243,9 +245,10 @@ defmodule Split.RPC.ResponseParserTest do
                     killed: false,
                     treatments: ["on", "off"],
                     change_number: 1_499_375_079_066,
-                    configurations: %{},
+                    configs: %{},
                     default_treatment: "off",
-                    flag_sets: []
+                    sets: [],
+                    impressions_disabled: false
                   }
                 ]}
     end
@@ -266,7 +269,7 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               {:ok, %{split_names: ["feature_a", "feature_b"]}}
+               {:ok, ["feature_a", "feature_b"]}
     end
 
     test "parses successful track RPC call" do

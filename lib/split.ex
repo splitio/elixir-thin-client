@@ -8,15 +8,17 @@ defmodule Split do
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
 
+  # @TODO move struct to Split.SplitView module and document it
   @type t :: %Split{
           name: String.t(),
           traffic_type: String.t(),
           killed: boolean(),
           treatments: [String.t()],
           change_number: integer(),
-          configurations: map(),
+          configs: map(),
           default_treatment: String.t(),
-          flag_sets: [String.t()]
+          sets: [String.t()],
+          impressions_disabled: boolean()
         }
 
   defstruct [
@@ -25,9 +27,10 @@ defmodule Split do
     :killed,
     :treatments,
     :change_number,
-    :configurations,
+    :configs,
     :default_treatment,
-    :flag_sets
+    :sets,
+    :impressions_disabled
   ]
 
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
@@ -92,7 +95,7 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec split_names() :: {:ok, %{split_names: String.t()}} | {:error, term()}
+  @spec split_names() :: {:ok, [String.t()]} | {:error, term()}
   def split_names do
     request = Message.split_names()
     execute_rpc(request)
