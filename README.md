@@ -37,10 +37,10 @@ Or by starting it manually:
 Split.Sockets.Supervisor.start_link(opts)
 ```
 
-Where `opts` is a keyword list with the following options:
+Where `opts` is a keyword list or map with the following options:
 
-- `:socket_path` - The path to the splitd socket file. For example `/var/run/splitd.sock`.
-- `:fallback_enabled` - A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
+- `:socket_path` - The path to the splitd socket file. Default is `/var/run/splitd.sock`.
+- `:fallback_enabled` - A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value. Default is `false`.
 
 Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon.
 

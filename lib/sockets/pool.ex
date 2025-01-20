@@ -21,11 +21,7 @@ defmodule Split.Sockets.Pool do
   end
 
   def start_link(opts) when is_map(opts) do
-    # Validate required options
-    unless Map.has_key?(opts, :socket_path) do
-      raise ArgumentError, "socket_path is required"
-    end
-
+    socket_path = Map.get(opts, :socket_path, "/var/run/splitd.sock")
     fallback_enabled = Map.get(opts, :fallback_enabled, false)
     :persistent_term.put(:splitd_fallback_enabled, fallback_enabled)
 
@@ -34,6 +30,7 @@ defmodule Split.Sockets.Pool do
 
     opts =
       opts
+      |> Map.put_new(:socket_path, socket_path)
       |> Map.put_new(:fallback_enabled, fallback_enabled)
       |> Map.put_new(:pool_size, pool_size)
       |> Map.put_new(:pool_name, pool_name)
