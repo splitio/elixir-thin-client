@@ -33,6 +33,22 @@ defmodule Split do
     :impressions_disabled
   ]
 
+  @doc """
+  Initializes the Split client Supervisor with the given configuration.
+
+  ## Options
+    * `:socket_path` - Path to the splitd socket (default: "/var/run/splitd.sock")
+    * `:fallback_enabled` - Whether to enable fallback mode (default: false)
+
+  ## Examples
+      iex> Split.start(socket_path: "/var/run/splitd.sock", fallback_enabled: true)
+      {:ok, pid}
+  """
+  @spec start(keyword() | map()) :: Supervisor.on_start()
+  def start(opts) do
+    Split.Supervisor.start_link(opts)
+  end
+
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
           {:ok, Treatment.t()} | {:error, term()}
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do

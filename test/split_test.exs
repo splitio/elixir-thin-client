@@ -2,7 +2,7 @@ defmodule SplitThinElixirTest do
   use ExUnit.Case
 
   alias Split.Impression
-  alias Split.Sockets.Supervisor
+  alias Split.Supervisor
   alias Split.Treatment
 
   setup_all context do

@@ -2,7 +2,7 @@ defmodule Split.Sockets.PoolTest do
   use ExUnit.Case
 
   alias Split.RPC.Message
-  alias Split.Sockets.Supervisor
+  alias Split.Supervisor
   alias Split.Sockets.Pool
   alias Split.Sockets.PoolMetrics
 

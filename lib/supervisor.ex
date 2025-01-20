@@ -1,4 +1,4 @@
-defmodule Split.Sockets.Supervisor do
+defmodule Split.Supervisor do
   use GenServer
 
   alias Split.Sockets.Pool
