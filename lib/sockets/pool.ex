@@ -16,7 +16,16 @@ defmodule Split.Sockets.Pool do
     }
   end
 
-  def start_link(opts) do
+  def start_link(opts) when is_list(opts) do
+    start_link(Map.new(opts))
+  end
+
+  def start_link(opts) when is_map(opts) do
+    # Validate required options
+    unless Map.has_key?(opts, :socket_path) do
+      raise ArgumentError, "socket_path is required"
+    end
+
     fallback_enabled = Map.get(opts, :fallback_enabled, false)
     :persistent_term.put(:splitd_fallback_enabled, fallback_enabled)
 
