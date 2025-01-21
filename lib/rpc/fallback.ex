@@ -41,7 +41,7 @@ defmodule Split.RPC.Fallback do
       {:ok, []}
 
       iex> Fallback.fallback(%Message{o: 0xA0})
-      {:ok, %{split_names: []}}
+      {:ok, []}
 
       iex> Fallback.fallback(%Message{o: 0x80})
       :ok
@@ -73,7 +73,7 @@ defmodule Split.RPC.Fallback do
   end
 
   def fallback(%Message{o: @split_names_opcode}) do
-    {:ok, %{split_names: []}}
+    {:ok, []}
   end
 
   def fallback(%Message{o: @track_opcode}) do
