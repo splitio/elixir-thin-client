@@ -17,7 +17,7 @@ defmodule Split do
     def start(_type, _args) do
       children = [
         # ... other children ...
-        {Split, [socket_path: "/var/run/split.sock", fallback_enabled: true}
+        {Split, [socket_path: "/var/run/split.sock", fallback_enabled: true]}
       ]
 
       opts = [strategy: :one_for_one, name: MyApp.Supervisor]
