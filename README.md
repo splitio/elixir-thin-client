@@ -27,20 +27,22 @@ Then you can start the Elixir Split Thin Client, either in your supervision tree
 
 ```elixir
 children = [
-  {Split.Sockets.Supervisor, opts}
+  {Split, opts}
 ]
 ```
 
 Or by starting it manually:
 
 ```elixir
-Split.Sockets.Supervisor.start_link(opts)
+Split.Supervisor.start_link(opts)
 ```
 
 Where `opts` is a keyword list with the following options:
 
-- `:socket_path` - The path to the splitd socket file. For example `/var/run/splitd.sock`.
-- `:fallback_enabled` - A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
+- `:socket_path`: **REQUIRED** The path to the splitd socket file. For example `/var/run/splitd.sock`.
+- `:fallback_enabled`: **OPTIONAL** A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
+- `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
+- `:connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
 
 Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon.
 
