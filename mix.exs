@@ -9,7 +9,23 @@ defmodule SplitThinElixir.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      runtime_tools: [:observer]
+      runtime_tools: [:observer],
+      package: package(),
+    ]
+  end
+
+
+  # Package-specific metadata for Hex.pm
+  defp package do
+    [
+      name: "split_thin_sdk",
+      description: "Official Split by Harness SDK for feature flags (a.k.a. Split FME)",
+      licenses: ["Apache-2.0"],
+      links: %{
+        "GitHub" => "https://github.com/splitio/elixir-thin-client",
+        "Docs" => "https://hexdocs.pm/split_thin_sdk"
+      },
+      maintainers: ["Emiliano Sanchez", "Nicolas Zelaya", "split-fme-libraries@harness.io"],
     ]
   end
 
