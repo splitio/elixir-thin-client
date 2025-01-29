@@ -64,6 +64,34 @@ defmodule Split.RPC.ResponseParser do
   end
 
   def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => %{"r" => treatments}}},
+        %Message{
+          o: opcode,
+          a: args
+        },
+        _opts
+      )
+      when opcode in [
+             @get_treatments_by_flag_set_opcode,
+             @get_treatments_with_config_by_flag_set_opcode,
+             @get_treatments_by_flag_sets_opcode,
+             @get_treatments_with_config_by_flag_sets_opcode
+           ] do
+    user_key = Enum.at(args, 0)
+
+    mapped_treatments =
+      treatments
+      |> Enum.map(fn {feature_name, treatment} ->
+        processed_treatment = Treatment.build_from_daemon_response(treatment)
+        Telemetry.send_impression(user_key, feature_name, processed_treatment)
+        {feature_name, processed_treatment}
+      end)
+      |> Map.new()
+
+    {:ok, mapped_treatments}
+  end
+
+  def parse_response(
         {:ok, %{"s" => @status_ok, "p" => payload}},
         %Message{o: @split_opcode},
         _opts

@@ -94,6 +94,95 @@ defmodule SplitThinElixirTest do
     end
   end
 
+  describe "get_treatments_by_flag_set/2" do
+    test "returns expected map with structs" do
+      assert {:ok, %{"emi_test" => %Treatment{treatment: "on"}}} =
+               Split.get_treatments_by_flag_set(
+                 "user-id-" <> to_string(Enum.random(1..100_000)),
+                 "flag_set_name"
+               )
+    end
+
+    test "emits telemetry event for impression listening" do
+      ref = :telemetry_test.attach_event_handlers(self(), [[:split, :impression]])
+
+      Split.get_treatments_by_flag_set(
+        "user-id-" <> to_string(Enum.random(1..100_000)),
+        "flag_set_name"
+      )
+
+      assert_received {[:split, :impression], ^ref, _, %{impression: %Impression{}}}
+    end
+  end
+
+  describe "get_treatments_with_config_by_flag_set/2" do
+    test "returns expected struct" do
+      assert {:ok, %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}}} =
+               Split.get_treatments_with_config_by_flag_set(
+                 "user-id-" <> to_string(Enum.random(1..100_000)),
+                 "flag_set_name"
+               )
+    end
+
+    test "emits telemetry event for impression listening" do
+      ref = :telemetry_test.attach_event_handlers(self(), [[:split, :impression]])
+
+      Split.get_treatments_with_config_by_flag_set(
+        "user-id-" <> to_string(Enum.random(1..100_000)),
+        "flag_set_name"
+      )
+
+      assert_received {[:split, :impression], ^ref, _, %{impression: %Impression{}}}
+    end
+  end
+
+  describe "get_treatments_by_flag_sets/2" do
+    test "returns expected map with structs" do
+      assert {:ok, %{"emi_test" => %Treatment{treatment: "on"}}} =
+               Split.get_treatments_by_flag_sets(
+                 "user-id-" <> to_string(Enum.random(1..100_000)),
+                 [
+                   "flag_set_name"
+                 ]
+               )
+    end
+
+    test "emits telemetry event for impression listening" do
+      ref = :telemetry_test.attach_event_handlers(self(), [[:split, :impression]])
+
+      Split.get_treatments_by_flag_sets("user-id-" <> to_string(Enum.random(1..100_000)), [
+        "flag_set_name"
+      ])
+
+      assert_received {[:split, :impression], ^ref, _, %{impression: %Impression{}}}
+    end
+  end
+
+  describe "get_treatments_with_config_by_flag_sets/2" do
+    test "returns expected struct" do
+      assert {:ok, %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}}} =
+               Split.get_treatments_with_config_by_flag_sets(
+                 "user-id-" <> to_string(Enum.random(1..100_000)),
+                 [
+                   "flag_set_name"
+                 ]
+               )
+    end
+
+    test "emits telemetry event for impression listening" do
+      ref = :telemetry_test.attach_event_handlers(self(), [[:split, :impression]])
+
+      Split.get_treatments_with_config_by_flag_sets(
+        "user-id-" <> to_string(Enum.random(1..100_000)),
+        [
+          "flag_set_name"
+        ]
+      )
+
+      assert_received {[:split, :impression], ^ref, _, %{impression: %Impression{}}}
+    end
+  end
+
   test "track/3" do
     assert :ok =
              Split.track("user-id-" <> to_string(Enum.random(1..100_000)), "account", "purchase")

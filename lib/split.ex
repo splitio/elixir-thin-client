@@ -156,7 +156,89 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec track(String.t(), String.t(), String.t(), term(), map()) :: :ok | {:error, term()}
+  @spec get_treatments_by_flag_set(String.t(), String.t(), String.t() | nil, map() | nil) ::
+          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  def get_treatments_by_flag_set(user_key, flag_set_name, bucketing_key \\ nil, attributes \\ %{}) do
+    request =
+      Message.get_treatments_by_flag_set(
+        user_key: user_key,
+        feature_name: flag_set_name,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
+  end
+
+  @spec get_treatments_with_config_by_flag_set(
+          String.t(),
+          String.t(),
+          String.t() | nil,
+          map() | nil
+        ) ::
+          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  def get_treatments_with_config_by_flag_set(
+        user_key,
+        flag_set_name,
+        bucketing_key \\ nil,
+        attributes \\ %{}
+      ) do
+    request =
+      Message.get_treatments_with_config_by_flag_set(
+        user_key: user_key,
+        feature_name: flag_set_name,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
+  end
+
+  @spec get_treatments_by_flag_sets(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  def get_treatments_by_flag_sets(
+        user_key,
+        flag_set_names,
+        bucketing_key \\ nil,
+        attributes \\ %{}
+      ) do
+    request =
+      Message.get_treatments_by_flag_sets(
+        user_key: user_key,
+        feature_names: flag_set_names,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
+  end
+
+  @spec get_treatments_with_config_by_flag_sets(
+          String.t(),
+          [String.t()],
+          String.t() | nil,
+          map() | nil
+        ) ::
+          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  def get_treatments_with_config_by_flag_sets(
+        user_key,
+        flag_set_names,
+        bucketing_key \\ nil,
+        attributes \\ %{}
+      ) do
+    request =
+      Message.get_treatments_with_config_by_flag_sets(
+        user_key: user_key,
+        feature_names: flag_set_names,
+        bucketing_key: bucketing_key,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
+  end
+
+  @spec track(String.t(), String.t(), String.t(), number() | nil, map() | nil) ::
+          :ok | {:error, term()}
   def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     request = Message.track(user_key, traffic_type, event_type, value, properties)
     execute_rpc(request)

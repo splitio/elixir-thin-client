@@ -146,6 +146,186 @@ defmodule Split.RPC.ResponseParserTest do
                 }}
     end
 
+    test "parses get_treatments_by_flag_set RPC response" do
+      message = %Message{
+        o: @get_treatments_by_flag_set_opcode,
+        a: ["user_key", "bucketing_key", "flag_set_name"]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604}
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604}
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               {:ok,
+                %{
+                  "feature_name1" => %Split.Treatment{
+                    treatment: "on",
+                    label: "test label 1",
+                    config: nil,
+                    change_number: 123,
+                    timestamp: 1_723_742_604
+                  },
+                  "feature_name2" => %Split.Treatment{
+                    treatment: "off",
+                    label: "test label 2",
+                    config: nil,
+                    change_number: 456,
+                    timestamp: 1_723_742_604
+                  }
+                }}
+    end
+
+    test "parses get_treatments_with_config_by_flag_set RPC response" do
+      message = %Message{
+        o: @get_treatments_with_config_by_flag_set_opcode,
+        a: ["user_key", "bucketing_key", "flag_set_name"]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604},
+                 "c" => "{\"foo\": \"bar\"}"
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604},
+                 "c" => "{\"baz\": \"qux\"}"
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               {:ok,
+                %{
+                  "feature_name1" => %Split.Treatment{
+                    treatment: "on",
+                    label: "test label 1",
+                    config: "{\"foo\": \"bar\"}",
+                    change_number: 123,
+                    timestamp: 1_723_742_604
+                  },
+                  "feature_name2" => %Split.Treatment{
+                    treatment: "off",
+                    label: "test label 2",
+                    config: "{\"baz\": \"qux\"}",
+                    change_number: 456,
+                    timestamp: 1_723_742_604
+                  }
+                }}
+    end
+
+    test "parses get_treatments_by_flag_sets RPC response" do
+      message = %Message{
+        o: @get_treatments_by_flag_sets_opcode,
+        a: ["user_key", "bucketing_key", ["flag_set_name1", "flag_set_name2"]]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604}
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604}
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               {:ok,
+                %{
+                  "feature_name1" => %Split.Treatment{
+                    treatment: "on",
+                    label: "test label 1",
+                    config: nil,
+                    change_number: 123,
+                    timestamp: 1_723_742_604
+                  },
+                  "feature_name2" => %Split.Treatment{
+                    treatment: "off",
+                    label: "test label 2",
+                    config: nil,
+                    change_number: 456,
+                    timestamp: 1_723_742_604
+                  }
+                }}
+    end
+
+    test "parses get_treatments_with_config_by_flag_sets RPC response" do
+      message = %Message{
+        o: @get_treatments_with_config_by_flag_sets_opcode,
+        a: ["user_key", "bucketing_key", ["flag_set_name1", "flag_set_name2"]]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604},
+                 "c" => "{\"foo\": \"bar\"}"
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604},
+                 "c" => "{\"baz\": \"qux\"}"
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               {:ok,
+                %{
+                  "feature_name1" => %Split.Treatment{
+                    treatment: "on",
+                    label: "test label 1",
+                    config: "{\"foo\": \"bar\"}",
+                    change_number: 123,
+                    timestamp: 1_723_742_604
+                  },
+                  "feature_name2" => %Split.Treatment{
+                    treatment: "off",
+                    label: "test label 2",
+                    config: "{\"baz\": \"qux\"}",
+                    change_number: 456,
+                    timestamp: 1_723_742_604
+                  }
+                }}
+    end
+
     test "parses split RPC call" do
       message = %Message{o: @split_opcode, a: []}
 
