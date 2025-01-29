@@ -10,7 +10,7 @@ defmodule Split.Sockets.Conn do
   @type t :: %__MODULE__{
           socket: port() | nil,
           socket_path: String.t(),
-          opts: map()
+          opts: keyword()
         }
 
   defstruct [
@@ -30,8 +30,8 @@ defmodule Split.Sockets.Conn do
   @default_connect_timeout 1000
   @default_rcv_timeout 1000
 
-  @spec new(String.t(), map()) :: t
-  def new(socket_path, opts \\ %{}) do
+  @spec new(String.t(), keyword()) :: t
+  def new(socket_path, opts \\ []) do
     %__MODULE__{
       socket: nil,
       socket_path: socket_path,
@@ -41,7 +41,7 @@ defmodule Split.Sockets.Conn do
 
   @spec connect(t) :: {:ok, t()} | {:error, t(), term()}
   def connect(%__MODULE__{socket: nil, socket_path: socket_path, opts: opts} = conn) do
-    connect_timeout = Map.get(conn.opts, :connect_timeout, @default_connect_timeout)
+    connect_timeout = Keyword.get(opts, :connect_timeout, @default_connect_timeout)
 
     Telemetry.span(:connect, %{socket_path: socket_path, pool_name: opts[:pool_name]}, fn ->
       case :gen_tcp.connect({:local, socket_path}, 0, @connect_opts, connect_timeout) do

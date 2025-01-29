@@ -1,6 +1,54 @@
 defmodule Split do
   @moduledoc """
-  Documentation for `Split`.
+  The Split.io Elixir thin client.
+
+  This module provides a simple API to interact with the Split.io service
+  via the [Split Daemon (splitd)](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd).
+
+  ## Adding Split to Your Supervision Tree
+
+  The most basic approach is to add `Split` as a child of your application's
+  top-most supervisor, i.e. `lib/my_app/application.ex`.
+
+  ```elixir
+  defmodule MyApp.Application do
+    use Application
+
+    def start(_type, _args) do
+      children = [
+        # ... other children ...
+        {Split, [socket_path: "/var/run/split.sock", fallback_enabled: true]}
+      ]
+
+      opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+      Supervisor.start_link(children, opts)
+    end
+  end
+  ```
+
+  You can also start `Split` dynamically by calling `Split.Supervisor.start_link/1`:
+
+  ```elixir
+  Split.Supervisor.start_link(opts)
+  ```
+
+  ### Options
+
+  `Split` takes a number of keyword arguments as options when starting. The following options are available:
+
+  - `:socket_path`: **REQUIRED** The path to the splitd socket file. For example `/var/run/splitd.sock`.
+  - `:fallback_enabled`: **OPTIONAL** A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
+  - `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
+  - `:connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
+
+
+  ## Using the API
+
+  Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon to access feature flags and configurations.
+
+  ```elixir
+  Split.get_treatment("user_key", "feature_name")
+  ```
   """
   alias Split.Telemetry
   alias Split.Sockets.Pool
@@ -21,6 +69,15 @@ defmodule Split do
           impressions_disabled: boolean()
         }
 
+  @typedoc "An option that can be provided when starting `Split`."
+  @type option ::
+          {:socket_path, String.t()}
+          | {:fallback_enabled, boolean()}
+          | {:pool_size, non_neg_integer()}
+          | {:connect_timeout, non_neg_integer()}
+
+  @type options :: [option()]
+
   defstruct [
     :name,
     :traffic_type,
@@ -32,6 +89,16 @@ defmodule Split do
     :sets,
     :impressions_disabled
   ]
+
+  @doc """
+  Builds a child specification to use in a Supervisor.
+
+  Normally not called directly by your code. Instead, it will be
+  called by your application's Supervisor once you add `Split`
+  to its supervision tree.
+  """
+  @spec child_spec(options()) :: Supervisor.child_spec()
+  defdelegate child_spec(options), to: Split.Supervisor
 
   @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
           {:ok, Treatment.t()} | {:error, term()}
