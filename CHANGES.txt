@@ -1,0 +1,7 @@
+0.1.0 (January 27, 2025):
+ - BREAKING CHANGES:
+    - Renamed `Split.Socket.Supervisor` module to `Split.Supervisor`, and updated the project structure to use a Context which is more in line to how Elixir libraries are structured.
+    - Refactored the options passed to the Split.Supervisor.start_link function to use Keywords instead of Maps to be more in line with other Elixir libraries and common practices (See https://github.com/splitio/elixir-thin-client/pull/17).
+
+0.0.0 (January 21, 2025):
+ - Initial public release.
