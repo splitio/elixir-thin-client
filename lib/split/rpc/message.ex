@@ -22,15 +22,13 @@ defmodule Split.RPC.Message do
         }
 
   @type get_treatment_args ::
-          {:user_key, String.t()}
+          {:user_key, Split.split_key()}
           | {:feature_name, String.t()}
-          | {:bucketing_key, String.t() | nil}
           | {:attributes, map() | nil}
 
   @type get_treatments_args ::
-          {:user_key, String.t()}
+          {:user_key, Split.split_key()}
           | {:feature_names, list(String.t())}
-          | {:bucketing_key, String.t() | nil}
           | {:attributes, map() | nil}
 
   @doc """
@@ -50,9 +48,8 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatment(
-      ...>   user_key: "user_key",
-      ...>   feature_name: "feature_name",
-      ...>   bucketing_key: "bucketing_key"
+      ...>   user_key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_name: "feature_name"
       ...> )
       %Message{a: ["user_key", "bucketing_key", "feature_name", %{}], o: 17, v: 1}
 
@@ -70,9 +67,8 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatment_with_config(
-      ...>   user_key: "user_key",
-      ...>   feature_name: "feature_name",
-      ...>   bucketing_key: "bucketing_key"
+      ...>   user_key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_name: "feature_name"
       ...> )
       %Message{a: ["user_key", "bucketing_key", "feature_name", %{}], o: 19, v: 1}
 
@@ -93,9 +89,8 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatments(
-      ...>   user_key: "user_key",
-      ...>   feature_names: ["feature_name1", "feature_name2"],
-      ...>   bucketing_key: "bucketing_key"
+      ...>   user_key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_names: ["feature_name1", "feature_name2"]
       ...> )
       %Message{
         a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"], %{}],
@@ -120,9 +115,8 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatments_with_config(
-      ...>   user_key: "user_key",
-      ...>   feature_names: ["feature_name1", "feature_name2"],
-      ...>   bucketing_key: "bucketing_key"
+      ...>   user_key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_names: ["feature_name1", "feature_name2"]
       ...> )
       %Message{
         a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"], %{}],
@@ -245,14 +239,19 @@ defmodule Split.RPC.Message do
       if Keyword.get(opts, :multiple, false), do: :feature_names, else: :feature_name
 
     user_key = Keyword.fetch!(data, :user_key)
+    {matching_key, bucketing_key} =
+      if is_map(user_key) do
+        {user_key.matching_key, user_key.bucketing_key}
+      else
+        {user_key, nil}
+      end
     feature_name = Keyword.fetch!(data, features_key)
-    bucketing_key = Keyword.get(data, :bucketing_key, nil)
     attributes = Keyword.get(data, :attributes, %{})
 
     %__MODULE__{
       o: opcode,
       a: [
-        user_key,
+        matching_key,
         bucketing_key,
         feature_name,
         attributes

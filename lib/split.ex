@@ -76,6 +76,8 @@ defmodule Split do
 
   @type options :: [option()]
 
+  @type split_key :: String.t() | {:matching_key, String.t(), :bucketing_key, String.t() | nil}
+
   defstruct [
     :name,
     :traffic_type,
@@ -97,63 +99,60 @@ defmodule Split do
   @spec child_spec(options()) :: Supervisor.child_spec()
   defdelegate child_spec(options), to: Split.Supervisor
 
-  @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
+  @spec get_treatment(split_key(), String.t(), map() | nil) ::
           {:ok, Treatment.t()} | {:error, term()}
-  def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
+  def get_treatment(user_key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment(
         user_key: user_key,
         feature_name: feature_name,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::
+  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) ::
           {:ok, Treatment.t()} | {:error, term()}
-  def get_treatment_with_config(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
+  def get_treatment_with_config(user_key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
         user_key: user_key,
         feature_name: feature_name,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+  @spec get_treatments(split_key(), [String.t()], map() | nil) ::
           {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
-  def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
+  def get_treatments(user_key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments(
         user_key: user_key,
         feature_names: feature_names,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+  @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) ::
           {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
-  def get_treatments_with_config(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
+  def get_treatments_with_config(user_key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments_with_config(
         user_key: user_key,
         feature_names: feature_names,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec track(String.t(), String.t(), String.t(), term(), map()) :: :ok | {:error, term()}
+  @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) ::
+          :ok | {:error, term()}
   def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     request = Message.track(user_key, traffic_type, event_type, value, properties)
     execute_rpc(request)
