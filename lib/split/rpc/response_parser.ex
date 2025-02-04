@@ -34,10 +34,10 @@ defmodule Split.RPC.ResponseParser do
       )
       when opcode in [@get_treatment_opcode, @get_treatment_with_config_opcode] do
     treatment = Treatment.build_from_daemon_response(treatment_data)
-    user_key = Enum.at(args, 0)
+    key = Enum.at(args, 0)
     feature_name = Enum.at(args, 2)
 
-    Telemetry.send_impression(user_key, feature_name, treatment)
+    Telemetry.send_impression(key, feature_name, treatment)
     {:ok, treatment}
   end
 
@@ -51,12 +51,12 @@ defmodule Split.RPC.ResponseParser do
       )
       when opcode in [@get_treatments_opcode, @get_treatments_with_config_opcode] do
     treatments = Enum.map(treatments, &Treatment.build_from_daemon_response/1)
-    user_key = Enum.at(args, 0)
+    key = Enum.at(args, 0)
     feature_names = Enum.at(args, 2)
 
     mapped_treatments =
       Enum.zip_reduce(feature_names, treatments, %{}, fn feature_name, treatment, acc ->
-        Telemetry.send_impression(user_key, feature_name, treatment)
+        Telemetry.send_impression(key, feature_name, treatment)
         Map.put(acc, feature_name, treatment)
       end)
 

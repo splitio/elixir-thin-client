@@ -101,10 +101,10 @@ defmodule Split do
 
   @spec get_treatment(split_key(), String.t(), map() | nil) ::
           {:ok, Treatment.t()} | {:error, term()}
-  def get_treatment(user_key, feature_name, attributes \\ %{}) do
+  def get_treatment(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment(
-        user_key: user_key,
+        key: key,
         feature_name: feature_name,
         attributes: attributes
       )
@@ -114,10 +114,10 @@ defmodule Split do
 
   @spec get_treatment_with_config(split_key(), String.t(), map() | nil) ::
           {:ok, Treatment.t()} | {:error, term()}
-  def get_treatment_with_config(user_key, feature_name, attributes \\ %{}) do
+  def get_treatment_with_config(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
-        user_key: user_key,
+        key: key,
         feature_name: feature_name,
         attributes: attributes
       )
@@ -127,10 +127,10 @@ defmodule Split do
 
   @spec get_treatments(split_key(), [String.t()], map() | nil) ::
           {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
-  def get_treatments(user_key, feature_names, attributes \\ %{}) do
+  def get_treatments(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments(
-        user_key: user_key,
+        key: key,
         feature_names: feature_names,
         attributes: attributes
       )
@@ -140,10 +140,10 @@ defmodule Split do
 
   @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) ::
           {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
-  def get_treatments_with_config(user_key, feature_names, attributes \\ %{}) do
+  def get_treatments_with_config(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments_with_config(
-        user_key: user_key,
+        key: key,
         feature_names: feature_names,
         attributes: attributes
       )
@@ -153,8 +153,8 @@ defmodule Split do
 
   @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) ::
           :ok | {:error, term()}
-  def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
-    request = Message.track(user_key, traffic_type, event_type, value, properties)
+  def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
+    request = Message.track(key, traffic_type, event_type, value, properties)
     execute_rpc(request)
   end
 
