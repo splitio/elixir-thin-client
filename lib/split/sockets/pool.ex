@@ -17,15 +17,11 @@ defmodule Split.Sockets.Pool do
   end
 
   def start_link(opts) do
-    fallback_enabled = Keyword.get(opts, :fallback_enabled, false)
-    :persistent_term.put(:splitd_fallback_enabled, fallback_enabled)
-
     pool_name = Keyword.get(opts, :pool_name, __MODULE__)
     pool_size = Keyword.get(opts, :pool_size, System.schedulers_online())
 
     opts =
       opts
-      |> Keyword.put_new(:fallback_enabled, fallback_enabled)
       |> Keyword.put_new(:pool_size, pool_size)
       |> Keyword.put_new(:pool_name, pool_name)
 
