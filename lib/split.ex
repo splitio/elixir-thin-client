@@ -55,7 +55,6 @@ defmodule Split do
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
 
-  # @TODO move struct to Split.SplitView module and document it
   @type t :: %Split{
           name: String.t(),
           traffic_type: String.t(),
