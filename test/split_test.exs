@@ -21,7 +21,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatment/2" do
     test "returns expected struct" do
-      assert %{treatment: "on"} =
+      assert "on" =
                Split.get_treatment("user-id-" <> to_string(Enum.random(1..100_000)), "ethan_test")
     end
 
@@ -57,7 +57,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments/2" do
     test "returns expected map with structs" do
-      assert %{"ethan_test" => %Treatment{treatment: "on"}} =
+      assert %{"ethan_test" => "on"} =
                Split.get_treatments("user-id-" <> to_string(Enum.random(1..100_000)), [
                  "ethan_test"
                ])

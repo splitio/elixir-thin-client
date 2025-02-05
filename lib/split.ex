@@ -98,7 +98,7 @@ defmodule Split do
   @spec child_spec(options()) :: Supervisor.child_spec()
   defdelegate child_spec(options), to: Split.Supervisor
 
-  @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) :: Treatment.t()
+  @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) :: String.t()
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     request =
       Message.get_treatment(
@@ -108,7 +108,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request).treatment
   end
 
   @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::
@@ -126,7 +126,7 @@ defmodule Split do
   end
 
   @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) :: %{
-          String.t() => Treatment.t()
+          String.t() => String.t()
         }
   def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
     request =
@@ -137,7 +137,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
   end
 
   @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) :: %{
