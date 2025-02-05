@@ -4,6 +4,7 @@
     - Updated the return type of `Split` functions to never return `{:error, _}` tuples. Instead, they will use the fallback value when an error occurs.
     - Updated the return types of `Split.get_treatment/3` and `Split.get_treatments/3` to return the treatment string value and a map of treatment string values, respectively.
     - Updated the `Split` struct: renamed the `configurations` field to `configs`, the `flag_sets` field to `sets`, and added the `impressions_disabled` field.
+    - Moved the `Split` struct into the new `Split.SplitView` module.
 
 0.1.0 (January 27, 2025):
  - BREAKING CHANGES:

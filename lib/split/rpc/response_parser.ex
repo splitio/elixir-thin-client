@@ -9,6 +9,7 @@ defmodule Split.RPC.ResponseParser do
   alias Split.RPC.Message
   alias Split.Telemetry
   alias Split.Treatment
+  alias Split.SplitView
 
   @type splitd_response :: {:ok, map()} | {:error, term()}
 
@@ -151,7 +152,7 @@ defmodule Split.RPC.ResponseParser do
   end
 
   defp parse_split(payload) do
-    %Split{
+    %SplitView{
       name: Map.get(payload, "n", nil),
       traffic_type: payload["t"],
       killed: payload["k"],

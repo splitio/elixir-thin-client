@@ -52,20 +52,9 @@ defmodule Split do
   alias Split.Telemetry
   alias Split.Sockets.Pool
   alias Split.Treatment
+  alias Split.SplitView
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
-
-  @type t :: %Split{
-          name: String.t(),
-          traffic_type: String.t(),
-          killed: boolean(),
-          treatments: [String.t()],
-          change_number: integer(),
-          configs: map(),
-          default_treatment: String.t(),
-          sets: [String.t()],
-          impressions_disabled: boolean()
-        }
 
   @typedoc "An option that can be provided when starting `Split`."
   @type option ::
@@ -74,18 +63,6 @@ defmodule Split do
           | {:connect_timeout, non_neg_integer()}
 
   @type options :: [option()]
-
-  defstruct [
-    :name,
-    :traffic_type,
-    :killed,
-    :treatments,
-    :change_number,
-    :configs,
-    :default_treatment,
-    :sets,
-    :impressions_disabled
-  ]
 
   @doc """
   Builds a child specification to use in a Supervisor.
@@ -166,14 +143,14 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec split(String.t()) :: Split.t() | nil
+  @spec split(String.t()) :: SplitView.t() | nil
   def split(name) do
     request = Message.split(name)
 
     execute_rpc(request)
   end
 
-  @spec splits() :: [Split.t()]
+  @spec splits() :: [SplitView.t()]
   def splits do
     request = Message.splits()
     execute_rpc(request)
