@@ -168,7 +168,7 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec split(String.t()) :: {:ok, Split.t()} | {:error, term()}
+  @spec split(String.t()) :: {:ok, Split.t() | nil} | {:error, term()}
   def split(name) do
     request = Message.split(name)
 
