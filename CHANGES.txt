@@ -1,3 +1,8 @@
+0.2.0 (February XX, 2025):
+ - BREAKING CHANGES:
+    - Removed the `fallback_enabled` option from the `Split.Supervisor.start_link` function. The fallback behavior is now always enabled.
+    - Updated the return type of `Split` functions to never return `{:error, _}` tuples. Instead, they will use the fallback value when an error occurs.
+
 0.1.0 (January 27, 2025):
  - BREAKING CHANGES:
     - Renamed `Split.Socket.Supervisor` module to `Split.Supervisor`, and updated the project structure to use a Context which is more in line to how Elixir libraries are structured.
