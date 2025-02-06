@@ -1,9 +1,9 @@
 0.2.0 (February XX, 2025):
  - BREAKING CHANGES:
-    - Removed the `fallback_enabled` option from the `Split.Supervisor.start_link/1` function. The fallback behavior is now always enabled, so `Split` functions will never return `{:error, _}` tuples. Instead, they will use the fallback value when an error occurs.
-    - Updated the return types of `Split.get_treatment/3` and `Split.get_treatments/3` to return the treatment string value and a map of treatment string values, respectively.
-    - Updated the `Split` struct: renamed the `configurations` field to `configs`, the `flag_sets` field to `sets`, and added the `impressions_disabled` field.
-    - Updated the signature of all `get_treatment` functions: removed the 3rd argument (`bucketing_key`) and extended the first argument (`key`) to accept a union, allowing a string or a map with the key and optional bucketing key (`{:matching_key, String.t(), :bucketing_key, String.t() | nil}`).
+    - Removed the `fallback_enabled` option from `Split.Supervisor.start_link/1`. Fallback behavior is now always enabled, so `Split` functions no longer return `{:error, _}` tuples but instead use the fallback value when an error occurs.
+    - Moved the `Split` struct to the new `Split.SplitView` module and updated some fields: renamed `configurations` to `configs`, `flag_sets` to `sets`, and added the `impressions_disabled` field.
+    - Updated the return types of `Split.get_treatment/3` and `Split.get_treatments/3` to return a treatment string and a map of treatment strings, respectively.
+    - Updated all `get_treatment` function signatures: removed the third argument (`bucketing_key`) and expanded the first argument (`key`) to accept a union, allowing either a string or a map with a key and optional bucketing key (`{:matching_key, String.t(), :bucketing_key, String.t() | nil}`).
 
 0.1.0 (January 27, 2025):
  - BREAKING CHANGES:

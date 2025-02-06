@@ -6,6 +6,7 @@ defmodule Split.RPC.ResponseParserTest do
   alias Split.RPC.ResponseParser
   alias Split.RPC.Message
   alias Split.Treatment
+  alias Split.SplitView
 
   import ExUnit.CaptureLog
 
@@ -166,7 +167,7 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               %Split{
+               %SplitView{
                  name: "feature_name",
                  traffic_type: "user",
                  killed: false,
@@ -222,7 +223,7 @@ defmodule Split.RPC.ResponseParserTest do
       # Order of splits is not guaranteed
       assert ResponseParser.parse_response(response, message) |> Enum.sort_by(& &1.name) ==
                [
-                 %Split{
+                 %SplitView{
                    name: "feature_a",
                    traffic_type: "user",
                    killed: false,
@@ -233,7 +234,7 @@ defmodule Split.RPC.ResponseParserTest do
                    sets: [],
                    impressions_disabled: false
                  },
-                 %Split{
+                 %SplitView{
                    name: "feature_b",
                    traffic_type: "user",
                    killed: false,

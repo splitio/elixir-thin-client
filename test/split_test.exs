@@ -3,6 +3,7 @@ defmodule SplitThinElixirTest do
 
   alias Split.Impression
   alias Split.Treatment
+  alias Split.SplitView
 
   setup_all context do
     test_id = :erlang.phash2(context.case)
@@ -104,12 +105,12 @@ defmodule SplitThinElixirTest do
   end
 
   test "split/1" do
-    assert %Split{name: "test-split"} =
+    assert %SplitView{name: "test-split"} =
              Split.split("test-split")
   end
 
   test "splits/0" do
-    assert [%Split{name: "test-split"}] = Split.splits()
+    assert [%SplitView{name: "test-split"}] = Split.splits()
   end
 
   describe "telemetry" do
