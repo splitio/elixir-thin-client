@@ -17,7 +17,7 @@ defmodule Split do
     def start(_type, _args) do
       children = [
         # ... other children ...
-        {Split, [socket_path: "/var/run/split.sock", fallback_enabled: true]}
+        {Split, [socket_path: "/var/run/split.sock"]}
       ]
 
       opts = [strategy: :one_for_one, name: MyApp.Supervisor]
@@ -37,7 +37,6 @@ defmodule Split do
   `Split` takes a number of keyword arguments as options when starting. The following options are available:
 
   - `:socket_path`: **REQUIRED** The path to the splitd socket file. For example `/var/run/splitd.sock`.
-  - `:fallback_enabled`: **OPTIONAL** A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
   - `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
   - `:connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
 
@@ -70,7 +69,6 @@ defmodule Split do
   @typedoc "An option that can be provided when starting `Split`."
   @type option ::
           {:socket_path, String.t()}
-          | {:fallback_enabled, boolean()}
           | {:pool_size, non_neg_integer()}
           | {:connect_timeout, non_neg_integer()}
 
@@ -99,8 +97,7 @@ defmodule Split do
   @spec child_spec(options()) :: Supervisor.child_spec()
   defdelegate child_spec(options), to: Split.Supervisor
 
-  @spec get_treatment(split_key(), String.t(), map() | nil) ::
-          {:ok, Treatment.t()} | {:error, term()}
+  @spec get_treatment(split_key(), String.t(), map() | nil) :: Treatment.t()
   def get_treatment(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment(
@@ -113,7 +110,7 @@ defmodule Split do
   end
 
   @spec get_treatment_with_config(split_key(), String.t(), map() | nil) ::
-          {:ok, Treatment.t()} | {:error, term()}
+          Treatment.t()
   def get_treatment_with_config(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
@@ -125,8 +122,9 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec get_treatments(split_key(), [String.t()], map() | nil) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  @spec get_treatments(split_key(), [String.t()], map() | nil) :: %{
+          String.t() => Treatment.t()
+        }
   def get_treatments(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments(
@@ -138,8 +136,9 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) :: %{
+          String.t() => Treatment.t()
+        }
   def get_treatments_with_config(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments_with_config(
@@ -151,27 +150,26 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) ::
-          :ok | {:error, term()}
+  @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) :: boolean()
   def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     request = Message.track(key, traffic_type, event_type, value, properties)
     execute_rpc(request)
   end
 
-  @spec split_names() :: {:ok, %{split_names: String.t()}} | {:error, term()}
+  @spec split_names() :: %{split_names: String.t()}
   def split_names do
     request = Message.split_names()
     execute_rpc(request)
   end
 
-  @spec split(String.t()) :: {:ok, Split.t()} | {:error, term()}
+  @spec split(String.t()) :: Split.t()
   def split(name) do
     request = Message.split(name)
 
     execute_rpc(request)
   end
 
-  @spec splits() :: {:ok, [Split.t()]} | {:error, term()}
+  @spec splits() :: [Split.t()]
   def splits do
     request = Message.splits()
     execute_rpc(request)
@@ -190,14 +188,8 @@ defmodule Split do
       |> Pool.send_message(opts)
       |> ResponseParser.parse_response(request, span_context: telemetry_span_context)
       |> case do
-        :ok ->
-          {:ok, %{}}
-
-        {:ok, data} = response ->
+        data = response ->
           {response, %{response: data}}
-
-        {:error, reason} = error ->
-          {error, %{error: reason}}
       end
     end)
   end

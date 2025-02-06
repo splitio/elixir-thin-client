@@ -1,5 +1,7 @@
 0.2.0 (February XX, 2025):
  - BREAKING CHANGES:
+    - Removed the `fallback_enabled` option from the `Split.Supervisor.start_link/1` function. The fallback behavior is now always enabled.
+    - Updated the return type of `Split` functions to never return `{:error, _}` tuples. Instead, they will use the fallback value when an error occurs.
     - Updated the signature of all `get_treatment` functions: removed the 3rd argument (`bucketing_key`), and extended the first argument (`key`) to accept a union, allowing a string or a map with the key and optional bucketing key (`{:matching_key, String.t(), :bucketing_key, String.t() | nil}`).
 
 0.1.0 (January 27, 2025):

@@ -17,11 +17,8 @@ defmodule Split.RPC.ResponseParser do
   """
   @spec parse_response(response :: splitd_response(), request :: Message.t(), [
           {:span_context, reference()} | {:span_context, nil}
-        ]) ::
-          :ok
-          | {:ok, map() | list() | Treatment.t() | Split.t() | nil}
-          | {:error, term()}
-          | :error
+        ]) :: map() | list() | Treatment.t() | Split.t() | boolean() | nil
+
   def parse_response(response, original_request, opts \\ [])
 
   def parse_response(
@@ -38,7 +35,7 @@ defmodule Split.RPC.ResponseParser do
     feature_name = Enum.at(args, 2)
 
     Telemetry.send_impression(key, feature_name, treatment)
-    {:ok, treatment}
+    treatment
   end
 
   def parse_response(
@@ -60,7 +57,7 @@ defmodule Split.RPC.ResponseParser do
         Map.put(acc, feature_name, treatment)
       end)
 
-    {:ok, mapped_treatments}
+    mapped_treatments
   end
 
   def parse_response(
@@ -68,7 +65,7 @@ defmodule Split.RPC.ResponseParser do
         %Message{o: @split_opcode},
         _opts
       ) do
-    {:ok, parse_split(payload)}
+    parse_split(payload)
   end
 
   def parse_response(
@@ -78,7 +75,7 @@ defmodule Split.RPC.ResponseParser do
         },
         _opts
       ) do
-    {:ok, %{split_names: split_names}}
+    %{split_names: split_names}
   end
 
   def parse_response(
@@ -93,7 +90,7 @@ defmodule Split.RPC.ResponseParser do
         [parse_split(split) | acc]
       end)
 
-    {:ok, splits}
+    splits
   end
 
   def parse_response(
@@ -104,9 +101,9 @@ defmodule Split.RPC.ResponseParser do
         _opts
       ) do
     if tracked? do
-      :ok
+      true
     else
-      :error
+      false
     end
   end
 
@@ -120,7 +117,7 @@ defmodule Split.RPC.ResponseParser do
       response: inspect(raw_response)
     )
 
-    maybe_fallback({:error, :splitd_internal_error}, message, opts)
+    fallback(message, opts)
   end
 
   def parse_response({:ok, raw_response}, %Message{} = message, opts) do
@@ -129,7 +126,7 @@ defmodule Split.RPC.ResponseParser do
       response: inspect(raw_response)
     )
 
-    maybe_fallback({:error, :splitd_parse_error}, message, opts)
+    fallback(message, opts)
   end
 
   def parse_response({:error, reason}, request, opts) do
@@ -138,23 +135,19 @@ defmodule Split.RPC.ResponseParser do
       reason: inspect(reason)
     )
 
-    maybe_fallback({:error, reason}, request, opts)
+    fallback(request, opts)
   end
 
-  defp maybe_fallback(response, original_request, opts) do
-    if :persistent_term.get(:splitd_fallback_enabled, false) do
-      fallback_response = Fallback.fallback(original_request)
+  defp fallback(original_request, opts) do
+    fallback_response = Fallback.fallback(original_request)
 
-      if Keyword.has_key?(opts, :span_context) do
-        Telemetry.span_event([:rpc, :fallback], opts[:span_context], %{
-          response: fallback_response
-        })
-      end
-
-      fallback_response
-    else
-      response
+    if Keyword.has_key?(opts, :span_context) do
+      Telemetry.span_event([:rpc, :fallback], opts[:span_context], %{
+        response: fallback_response
+      })
     end
+
+    fallback_response
   end
 
   defp parse_split(payload) do
