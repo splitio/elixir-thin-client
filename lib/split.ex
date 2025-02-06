@@ -64,6 +64,8 @@ defmodule Split do
 
   @type options :: [option()]
 
+  @type split_key :: String.t() | {:matching_key, String.t(), :bucketing_key, String.t() | nil}
+
   @doc """
   Builds a child specification to use in a Supervisor.
 
@@ -74,72 +76,66 @@ defmodule Split do
   @spec child_spec(options()) :: Supervisor.child_spec()
   defdelegate child_spec(options), to: Split.Supervisor
 
-  @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) :: String.t()
-  def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
+  @spec get_treatment(split_key(), String.t(), map() | nil) :: String.t()
+  def get_treatment(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment(
-        user_key: user_key,
+        key: key,
         feature_name: feature_name,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request).treatment
   end
 
-  @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::
-          Treatment.t()
-  def get_treatment_with_config(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
+  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) :: Treatment.t()
+  def get_treatment_with_config(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
-        user_key: user_key,
+        key: key,
         feature_name: feature_name,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) :: %{
-          String.t() => String.t()
-        }
-  def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
+  @spec get_treatments(split_key(), [String.t()], map() | nil) :: %{
+    String.t() => String.t()
+  }
+  def get_treatments(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments(
-        user_key: user_key,
+        key: key,
         feature_names: feature_names,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
   end
 
-  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) :: %{
-          String.t() => Treatment.t()
-        }
-  def get_treatments_with_config(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
+  @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) :: %{
+    String.t() => Treatment.t()
+  }
+  def get_treatments_with_config(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments_with_config(
-        user_key: user_key,
+        key: key,
         feature_names: feature_names,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec get_treatments_by_flag_set(String.t(), String.t(), String.t() | nil, map() | nil) :: %{
+  @spec get_treatments_by_flag_set(split_key(), String.t(), map() | nil) :: %{
           String.t() => String.t()
         }
-  def get_treatments_by_flag_set(user_key, flag_set_name, bucketing_key \\ nil, attributes \\ %{}) do
+  def get_treatments_by_flag_set(key, flag_set_name, attributes \\ %{}) do
     request =
       Message.get_treatments_by_flag_set(
-        user_key: user_key,
+        key: key,
         feature_name: flag_set_name,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
@@ -147,42 +143,37 @@ defmodule Split do
   end
 
   @spec get_treatments_with_config_by_flag_set(
+    split_key(),
           String.t(),
-          String.t(),
-          String.t() | nil,
           map() | nil
         ) ::
           %{String.t() => Treatment.t()}
   def get_treatments_with_config_by_flag_set(
-        user_key,
+        key,
         flag_set_name,
-        bucketing_key \\ nil,
         attributes \\ %{}
       ) do
     request =
       Message.get_treatments_with_config_by_flag_set(
-        user_key: user_key,
+        key: key,
         feature_name: flag_set_name,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec get_treatments_by_flag_sets(String.t(), [String.t()], String.t() | nil, map() | nil) ::
+  @spec get_treatments_by_flag_sets(split_key(), [String.t()], map() | nil) ::
           %{String.t() => String.t()}
   def get_treatments_by_flag_sets(
-        user_key,
+        key,
         flag_set_names,
-        bucketing_key \\ nil,
         attributes \\ %{}
       ) do
     request =
       Message.get_treatments_by_flag_sets(
-        user_key: user_key,
+        key: key,
         feature_names: flag_set_names,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
@@ -190,32 +181,29 @@ defmodule Split do
   end
 
   @spec get_treatments_with_config_by_flag_sets(
-          String.t(),
+    split_key(),
           [String.t()],
-          String.t() | nil,
           map() | nil
         ) ::
           %{String.t() => Treatment.t()}
   def get_treatments_with_config_by_flag_sets(
-        user_key,
+    key,
         flag_set_names,
-        bucketing_key \\ nil,
         attributes \\ %{}
       ) do
     request =
       Message.get_treatments_with_config_by_flag_sets(
-        user_key: user_key,
+        key: key,
         feature_names: flag_set_names,
-        bucketing_key: bucketing_key,
         attributes: attributes
       )
 
     execute_rpc(request)
   end
 
-  @spec track(String.t(), String.t(), String.t(), number() | nil, map() | nil) :: boolean()
-  def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
-    request = Message.track(user_key, traffic_type, event_type, value, properties)
+  @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) :: boolean()
+  def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
+    request = Message.track(key, traffic_type, event_type, value, properties)
     execute_rpc(request)
   end
 
