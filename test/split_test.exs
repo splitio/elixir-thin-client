@@ -3,6 +3,7 @@ defmodule SplitThinElixirTest do
 
   alias Split.Impression
   alias Split.Treatment
+  alias Split.SplitView
 
   setup_all context do
     test_id = :erlang.phash2(context.case)
@@ -21,7 +22,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatment/2" do
     test "returns expected struct" do
-      assert {:ok, %{treatment: "on"}} =
+      assert "on" =
                Split.get_treatment("user-id-" <> to_string(Enum.random(1..100_000)), "ethan_test")
     end
 
@@ -36,7 +37,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatment_with_config/2" do
     test "returns expected struct" do
-      assert {:ok, %Treatment{treatment: "on", config: %{"foo" => "bar"}}} =
+      assert %Treatment{treatment: "on", config: %{"foo" => "bar"}} =
                Split.get_treatment_with_config(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  "ethan_test"
@@ -57,7 +58,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments/2" do
     test "returns expected map with structs" do
-      assert {:ok, %{"ethan_test" => %Treatment{treatment: "on"}}} =
+      assert %{"ethan_test" => "on"} =
                Split.get_treatments("user-id-" <> to_string(Enum.random(1..100_000)), [
                  "ethan_test"
                ])
@@ -74,7 +75,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_with_config/2" do
     test "returns expected struct" do
-      assert {:ok, %{"ethan_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}}} =
+      assert %{"ethan_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}} =
                Split.get_treatments_with_config(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  [
@@ -184,21 +185,21 @@ defmodule SplitThinElixirTest do
   end
 
   test "track/3" do
-    assert :ok =
+    assert true =
              Split.track("user-id-" <> to_string(Enum.random(1..100_000)), "account", "purchase")
   end
 
   test "split_names/0" do
-    assert {:ok, ["ethan_test"]} == Split.split_names()
+    assert ["ethan_test"] == Split.split_names()
   end
 
   test "split/1" do
-    assert {:ok, %Split{name: "test-split"}} =
+    assert %SplitView{name: "test-split"} =
              Split.split("test-split")
   end
 
   test "splits/0" do
-    assert {:ok, [%Split{name: "test-split"}]} = Split.splits()
+    assert [%SplitView{name: "test-split"}] = Split.splits()
   end
 
   describe "telemetry" do
@@ -209,7 +210,7 @@ defmodule SplitThinElixirTest do
           [:split, :rpc, :stop]
         ])
 
-      {:ok, split} = Split.split("test-split")
+      split = Split.split("test-split")
 
       assert_received {[:split, :rpc, :start], ^ref, _, %{rpc_call: :split}}
 

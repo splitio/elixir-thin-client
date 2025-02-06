@@ -17,7 +17,7 @@ defmodule Split do
     def start(_type, _args) do
       children = [
         # ... other children ...
-        {Split, [socket_path: "/var/run/split.sock", fallback_enabled: true]}
+        {Split, [socket_path: "/var/run/split.sock"]}
       ]
 
       opts = [strategy: :one_for_one, name: MyApp.Supervisor]
@@ -37,7 +37,6 @@ defmodule Split do
   `Split` takes a number of keyword arguments as options when starting. The following options are available:
 
   - `:socket_path`: **REQUIRED** The path to the splitd socket file. For example `/var/run/splitd.sock`.
-  - `:fallback_enabled`: **OPTIONAL** A boolean that indicates wether we should return errors when RPC communication fails or falling back to a default value . Default is `false`.
   - `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
   - `:connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
 
@@ -53,42 +52,17 @@ defmodule Split do
   alias Split.Telemetry
   alias Split.Sockets.Pool
   alias Split.Treatment
+  alias Split.SplitView
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
-
-  # @TODO move struct to Split.SplitView module and document it
-  @type t :: %Split{
-          name: String.t(),
-          traffic_type: String.t(),
-          killed: boolean(),
-          treatments: [String.t()],
-          change_number: integer(),
-          configs: map(),
-          default_treatment: String.t(),
-          sets: [String.t()],
-          impressions_disabled: boolean()
-        }
 
   @typedoc "An option that can be provided when starting `Split`."
   @type option ::
           {:socket_path, String.t()}
-          | {:fallback_enabled, boolean()}
           | {:pool_size, non_neg_integer()}
           | {:connect_timeout, non_neg_integer()}
 
   @type options :: [option()]
-
-  defstruct [
-    :name,
-    :traffic_type,
-    :killed,
-    :treatments,
-    :change_number,
-    :configs,
-    :default_treatment,
-    :sets,
-    :impressions_disabled
-  ]
 
   @doc """
   Builds a child specification to use in a Supervisor.
@@ -100,8 +74,7 @@ defmodule Split do
   @spec child_spec(options()) :: Supervisor.child_spec()
   defdelegate child_spec(options), to: Split.Supervisor
 
-  @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) ::
-          {:ok, Treatment.t()} | {:error, term()}
+  @spec get_treatment(String.t(), String.t(), String.t() | nil, map() | nil) :: String.t()
   def get_treatment(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     request =
       Message.get_treatment(
@@ -111,11 +84,11 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request).treatment
   end
 
   @spec get_treatment_with_config(String.t(), String.t(), String.t() | nil, map() | nil) ::
-          {:ok, Treatment.t()} | {:error, term()}
+          Treatment.t()
   def get_treatment_with_config(user_key, feature_name, bucketing_key \\ nil, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
@@ -128,8 +101,9 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  @spec get_treatments(String.t(), [String.t()], String.t() | nil, map() | nil) :: %{
+          String.t() => String.t()
+        }
   def get_treatments(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
     request =
       Message.get_treatments(
@@ -139,11 +113,12 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
   end
 
-  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  @spec get_treatments_with_config(String.t(), [String.t()], String.t() | nil, map() | nil) :: %{
+          String.t() => Treatment.t()
+        }
   def get_treatments_with_config(user_key, feature_names, bucketing_key \\ nil, attributes \\ %{}) do
     request =
       Message.get_treatments_with_config(
@@ -156,8 +131,9 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec get_treatments_by_flag_set(String.t(), String.t(), String.t() | nil, map() | nil) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+  @spec get_treatments_by_flag_set(String.t(), String.t(), String.t() | nil, map() | nil) :: %{
+          String.t() => String.t()
+        }
   def get_treatments_by_flag_set(user_key, flag_set_name, bucketing_key \\ nil, attributes \\ %{}) do
     request =
       Message.get_treatments_by_flag_set(
@@ -167,7 +143,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
   end
 
   @spec get_treatments_with_config_by_flag_set(
@@ -176,7 +152,7 @@ defmodule Split do
           String.t() | nil,
           map() | nil
         ) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+          %{String.t() => Treatment.t()}
   def get_treatments_with_config_by_flag_set(
         user_key,
         flag_set_name,
@@ -195,7 +171,7 @@ defmodule Split do
   end
 
   @spec get_treatments_by_flag_sets(String.t(), [String.t()], String.t() | nil, map() | nil) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+          %{String.t() => String.t()}
   def get_treatments_by_flag_sets(
         user_key,
         flag_set_names,
@@ -210,7 +186,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
   end
 
   @spec get_treatments_with_config_by_flag_sets(
@@ -219,7 +195,7 @@ defmodule Split do
           String.t() | nil,
           map() | nil
         ) ::
-          {:ok, %{String.t() => Treatment.t()}} | {:error, term()}
+          %{String.t() => Treatment.t()}
   def get_treatments_with_config_by_flag_sets(
         user_key,
         flag_set_names,
@@ -237,27 +213,26 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec track(String.t(), String.t(), String.t(), number() | nil, map() | nil) ::
-          :ok | {:error, term()}
+  @spec track(String.t(), String.t(), String.t(), number() | nil, map() | nil) :: boolean()
   def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     request = Message.track(user_key, traffic_type, event_type, value, properties)
     execute_rpc(request)
   end
 
-  @spec split_names() :: {:ok, [String.t()]} | {:error, term()}
+  @spec split_names() :: [String.t()]
   def split_names do
     request = Message.split_names()
     execute_rpc(request)
   end
 
-  @spec split(String.t()) :: {:ok, Split.t()} | {:error, term()}
+  @spec split(String.t()) :: SplitView.t() | nil
   def split(name) do
     request = Message.split(name)
 
     execute_rpc(request)
   end
 
-  @spec splits() :: {:ok, [Split.t()]} | {:error, term()}
+  @spec splits() :: [SplitView.t()]
   def splits do
     request = Message.splits()
     execute_rpc(request)
@@ -276,14 +251,8 @@ defmodule Split do
       |> Pool.send_message(opts)
       |> ResponseParser.parse_response(request, span_context: telemetry_span_context)
       |> case do
-        :ok ->
-          {:ok, %{}}
-
-        {:ok, data} = response ->
+        data = response ->
           {response, %{response: data}}
-
-        {:error, reason} = error ->
-          {error, %{error: reason}}
       end
     end)
   end
