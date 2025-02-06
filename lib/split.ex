@@ -101,8 +101,8 @@ defmodule Split do
   end
 
   @spec get_treatments(split_key(), [String.t()], map() | nil) :: %{
-    String.t() => String.t()
-  }
+          String.t() => String.t()
+        }
   def get_treatments(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments(
@@ -115,8 +115,8 @@ defmodule Split do
   end
 
   @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) :: %{
-    String.t() => Treatment.t()
-  }
+          String.t() => Treatment.t()
+        }
   def get_treatments_with_config(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments_with_config(
@@ -143,7 +143,7 @@ defmodule Split do
   end
 
   @spec get_treatments_with_config_by_flag_set(
-    split_key(),
+          split_key(),
           String.t(),
           map() | nil
         ) ::
@@ -181,13 +181,13 @@ defmodule Split do
   end
 
   @spec get_treatments_with_config_by_flag_sets(
-    split_key(),
+          split_key(),
           [String.t()],
           map() | nil
         ) ::
           %{String.t() => Treatment.t()}
   def get_treatments_with_config_by_flag_sets(
-    key,
+        key,
         flag_set_names,
         attributes \\ %{}
       ) do
