@@ -5,7 +5,7 @@ defmodule Split.RPC.ResponseParserTest do
   alias Split.RPC.Fallback
   alias Split.RPC.ResponseParser
   alias Split.RPC.Message
-  alias Split.Treatment
+  alias Split.Impression
   alias Split.SplitView
 
   import ExUnit.CaptureLog
@@ -25,7 +25,10 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               %Treatment{
+               %Impression{
+                 key: "user_key",
+                 bucketing_key: "bucketing_key",
+                 feature: "feature_name",
                  change_number: 123,
                  config: nil,
                  label: "test label",
@@ -52,7 +55,10 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               %Treatment{
+               %Impression{
+                 key: "user_key",
+                 bucketing_key: "bucketing_key",
+                 feature: "feature_name",
                  change_number: 123,
                  config: "{\"foo\": \"bar\"}",
                  label: "test label",
@@ -81,14 +87,20 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert ResponseParser.parse_response(response, message) ==
                %{
-                 "feature_name1" => %Split.Treatment{
+                 "feature_name1" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name1",
                    treatment: "on",
                    label: "test label 1",
                    config: nil,
                    change_number: 123,
                    timestamp: 1_723_742_604
                  },
-                 "feature_name2" => %Split.Treatment{
+                 "feature_name2" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name2",
                    treatment: "off",
                    label: "test label 2",
                    config: nil,
@@ -126,14 +138,20 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert ResponseParser.parse_response(response, message) ==
                %{
-                 "feature_name1" => %Split.Treatment{
+                 "feature_name1" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name1",
                    treatment: "on",
                    label: "test label 1",
                    config: "{\"foo\": \"bar\"}",
                    change_number: 123,
                    timestamp: 1_723_742_604
                  },
-                 "feature_name2" => %Split.Treatment{
+                 "feature_name2" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name2",
                    treatment: "off",
                    label: "test label 2",
                    config: "{\"baz\": \"qux\"}",
@@ -169,14 +187,20 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert ResponseParser.parse_response(response, message) ==
                %{
-                 "feature_name1" => %Split.Treatment{
+                 "feature_name1" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name1",
                    treatment: "on",
                    label: "test label 1",
                    config: nil,
                    change_number: 123,
                    timestamp: 1_723_742_604
                  },
-                 "feature_name2" => %Split.Treatment{
+                 "feature_name2" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name2",
                    treatment: "off",
                    label: "test label 2",
                    config: nil,
@@ -214,14 +238,20 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert ResponseParser.parse_response(response, message) ==
                %{
-                 "feature_name1" => %Split.Treatment{
+                 "feature_name1" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name1",
                    treatment: "on",
                    label: "test label 1",
                    config: "{\"foo\": \"bar\"}",
                    change_number: 123,
                    timestamp: 1_723_742_604
                  },
-                 "feature_name2" => %Split.Treatment{
+                 "feature_name2" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name2",
                    treatment: "off",
                    label: "test label 2",
                    config: "{\"baz\": \"qux\"}",
@@ -257,14 +287,20 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert ResponseParser.parse_response(response, message) ==
                %{
-                 "feature_name1" => %Split.Treatment{
+                 "feature_name1" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name1",
                    treatment: "on",
                    label: "test label 1",
                    config: nil,
                    change_number: 123,
                    timestamp: 1_723_742_604
                  },
-                 "feature_name2" => %Split.Treatment{
+                 "feature_name2" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name2",
                    treatment: "off",
                    label: "test label 2",
                    config: nil,
@@ -302,14 +338,20 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert ResponseParser.parse_response(response, message) ==
                %{
-                 "feature_name1" => %Split.Treatment{
+                 "feature_name1" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name1",
                    treatment: "on",
                    label: "test label 1",
                    config: "{\"foo\": \"bar\"}",
                    change_number: 123,
                    timestamp: 1_723_742_604
                  },
-                 "feature_name2" => %Split.Treatment{
+                 "feature_name2" => %Impression{
+                  key: "user_key",
+                  bucketing_key: "bucketing_key",
+                  feature: "feature_name2",
                    treatment: "off",
                    label: "test label 2",
                    config: "{\"baz\": \"qux\"}",
@@ -524,7 +566,7 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert capture_log(fn ->
                assert ResponseParser.parse_response(response, message) ==
-                        %Split.Treatment{
+                        %Impression{
                           change_number: nil,
                           config: nil,
                           label: "exception",
@@ -545,7 +587,7 @@ defmodule Split.RPC.ResponseParserTest do
       assert capture_log(fn ->
                assert ResponseParser.parse_response(response, message) ==
                         %{
-                          "feature_name1" => %Split.Treatment{
+                          "feature_name1" => %Impression{
                             treatment: "control",
                             label: "exception",
                             config: nil,

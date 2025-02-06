@@ -49,10 +49,10 @@ defmodule Split do
   Split.get_treatment("user_key", "feature_name")
   ```
   """
-  alias Split.Telemetry
-  alias Split.Sockets.Pool
-  alias Split.Treatment
   alias Split.SplitView
+  alias Split.Telemetry
+  alias Split.TreatmentWithConfig
+  alias Split.Sockets.Pool
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
 
@@ -85,10 +85,10 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request).treatment
+    execute_rpc(request) |> impression_to_treatment()
   end
 
-  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) :: Treatment.t()
+  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) :: TreatmentWithConfig.t()
   def get_treatment_with_config(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
@@ -97,12 +97,12 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> impression_to_treatment_with_config()
   end
 
   @spec get_treatments(split_key(), [String.t()], map() | nil) :: %{
-    String.t() => String.t()
-  }
+          String.t() => String.t()
+        }
   def get_treatments(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments(
@@ -111,12 +111,12 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
+    execute_rpc(request) |> impressions_to_treatments()
   end
 
   @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) :: %{
-    String.t() => Treatment.t()
-  }
+          String.t() => TreatmentWithConfig.t()
+        }
   def get_treatments_with_config(key, feature_names, attributes \\ %{}) do
     request =
       Message.get_treatments_with_config(
@@ -125,7 +125,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> impressions_to_treatments_with_config()
   end
 
   @spec get_treatments_by_flag_set(split_key(), String.t(), map() | nil) :: %{
@@ -139,15 +139,15 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
+    execute_rpc(request) |> impressions_to_treatments()
   end
 
   @spec get_treatments_with_config_by_flag_set(
-    split_key(),
+          split_key(),
           String.t(),
           map() | nil
         ) ::
-          %{String.t() => Treatment.t()}
+          %{String.t() => TreatmentWithConfig.t()}
   def get_treatments_with_config_by_flag_set(
         key,
         flag_set_name,
@@ -160,7 +160,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> impressions_to_treatments_with_config()
   end
 
   @spec get_treatments_by_flag_sets(split_key(), [String.t()], map() | nil) ::
@@ -177,17 +177,17 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
+    execute_rpc(request) |> impressions_to_treatments()
   end
 
   @spec get_treatments_with_config_by_flag_sets(
-    split_key(),
+          split_key(),
           [String.t()],
           map() | nil
         ) ::
-          %{String.t() => Treatment.t()}
+          %{String.t() => TreatmentWithConfig.t()}
   def get_treatments_with_config_by_flag_sets(
-    key,
+        key,
         flag_set_names,
         attributes \\ %{}
       ) do
@@ -198,7 +198,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> impressions_to_treatments_with_config()
   end
 
   @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) :: boolean()
@@ -242,6 +242,26 @@ defmodule Split do
         data = response ->
           {response, %{response: data}}
       end
+    end)
+  end
+
+  defp impression_to_treatment(impression) do
+    impression.treatment
+  end
+
+  defp impression_to_treatment_with_config(impression) do
+    %TreatmentWithConfig{treatment: impression.treatment, config: impression.config}
+  end
+
+  defp impressions_to_treatments(impressions) do
+    Enum.into(impressions, %{}, fn {key, impression} ->
+      {key, impression_to_treatment(impression)}
+    end)
+  end
+
+  defp impressions_to_treatments_with_config(impressions) do
+    Enum.into(impressions, %{}, fn {key, impression} ->
+      {key, impression_to_treatment_with_config(impression)}
     end)
   end
 end

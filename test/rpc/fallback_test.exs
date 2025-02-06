@@ -3,7 +3,7 @@ defmodule Split.RPC.FallbackTest do
 
   alias Split.RPC.Fallback
   alias Split.RPC.Message
-  alias Split.Treatment
+  alias Split.Impression
 
   doctest Split.RPC.Fallback
 end
