@@ -61,9 +61,10 @@ defmodule Split do
           killed: boolean(),
           treatments: [String.t()],
           change_number: integer(),
-          configurations: map(),
+          configs: map(),
           default_treatment: String.t(),
-          flag_sets: [String.t()]
+          sets: [String.t()],
+          impressions_disabled: boolean()
         }
 
   @typedoc "An option that can be provided when starting `Split`."
@@ -82,9 +83,10 @@ defmodule Split do
     :killed,
     :treatments,
     :change_number,
-    :configurations,
+    :configs,
     :default_treatment,
-    :flag_sets
+    :sets,
+    :impressions_disabled
   ]
 
   @doc """
@@ -97,7 +99,7 @@ defmodule Split do
   @spec child_spec(options()) :: Supervisor.child_spec()
   defdelegate child_spec(options), to: Split.Supervisor
 
-  @spec get_treatment(split_key(), String.t(), map() | nil) :: Treatment.t()
+  @spec get_treatment(split_key(), String.t(), map() | nil) :: String.t()
   def get_treatment(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment(
@@ -106,7 +108,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request).treatment
   end
 
   @spec get_treatment_with_config(split_key(), String.t(), map() | nil) ::
@@ -123,7 +125,7 @@ defmodule Split do
   end
 
   @spec get_treatments(split_key(), [String.t()], map() | nil) :: %{
-          String.t() => Treatment.t()
+          String.t() => String.t()
         }
   def get_treatments(key, feature_names, attributes \\ %{}) do
     request =
@@ -133,7 +135,7 @@ defmodule Split do
         attributes: attributes
       )
 
-    execute_rpc(request)
+    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
   end
 
   @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) :: %{
@@ -156,13 +158,13 @@ defmodule Split do
     execute_rpc(request)
   end
 
-  @spec split_names() :: %{split_names: String.t()}
+  @spec split_names() :: [String.t()]
   def split_names do
     request = Message.split_names()
     execute_rpc(request)
   end
 
-  @spec split(String.t()) :: Split.t()
+  @spec split(String.t()) :: Split.t() | nil
   def split(name) do
     request = Message.split(name)
 

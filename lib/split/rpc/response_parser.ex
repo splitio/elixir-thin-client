@@ -75,7 +75,7 @@ defmodule Split.RPC.ResponseParser do
         },
         _opts
       ) do
-    %{split_names: split_names}
+    split_names
   end
 
   def parse_response(
@@ -157,9 +157,10 @@ defmodule Split.RPC.ResponseParser do
       killed: payload["k"],
       treatments: payload["s"],
       change_number: payload["c"],
-      configurations: payload["f"],
+      configs: payload["f"],
       default_treatment: payload["d"],
-      flag_sets: payload["e"]
+      sets: payload["e"],
+      impressions_disabled: payload["i"] || false
     }
   end
 end
