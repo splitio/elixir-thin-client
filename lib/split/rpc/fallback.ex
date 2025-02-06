@@ -70,7 +70,7 @@ defmodule Split.RPC.Fallback do
              @get_treatments_with_config_by_flag_sets_opcode
            ] do
 
-    {:ok, %{}} # Empty map since we don't have a way to know the feature names
+    %{} # Empty map since we don't have a way to know the feature names
   end
 
   def fallback(%Message{o: @split_opcode}) do

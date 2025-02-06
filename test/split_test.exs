@@ -97,7 +97,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_by_flag_set/2" do
     test "returns expected map with structs" do
-      assert {:ok, %{"emi_test" => %Treatment{treatment: "on"}}} =
+      assert %{"emi_test" => "on"} =
                Split.get_treatments_by_flag_set(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  "flag_set_name"
@@ -118,7 +118,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_with_config_by_flag_set/2" do
     test "returns expected struct" do
-      assert {:ok, %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}}} =
+      assert %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}} =
                Split.get_treatments_with_config_by_flag_set(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  "flag_set_name"
@@ -139,7 +139,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_by_flag_sets/2" do
     test "returns expected map with structs" do
-      assert {:ok, %{"emi_test" => %Treatment{treatment: "on"}}} =
+      assert %{"emi_test" => "on"} =
                Split.get_treatments_by_flag_sets(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  [
@@ -161,7 +161,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_with_config_by_flag_sets/2" do
     test "returns expected struct" do
-      assert {:ok, %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}}} =
+      assert %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}} =
                Split.get_treatments_with_config_by_flag_sets(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  [

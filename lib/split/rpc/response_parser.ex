@@ -86,7 +86,7 @@ defmodule Split.RPC.ResponseParser do
       end)
       |> Map.new()
 
-    {:ok, mapped_treatments}
+    mapped_treatments
   end
 
   def parse_response(
