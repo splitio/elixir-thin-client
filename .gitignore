@@ -29,3 +29,6 @@ split_thin_elixir-*.tar
 splitd
 # Ignore the splitd configuration file
 support/splitd.yaml
+
+# IDE files
+/.vscode/
