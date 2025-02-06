@@ -301,10 +301,10 @@ defmodule Split.Telemetry do
   Emits a telemetry `impression` event when a Split treatment has been evaluated.
   """
   @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
-  def send_impression(user_key, feature_name, %Treatment{} = treatment) do
+  def send_impression(key, feature_name, %Treatment{} = treatment) do
     :telemetry.execute([@app_name, :impression], %{}, %{
       impression: %Split.Impression{
-        key: user_key,
+        key: key,
         feature: feature_name,
         treatment: treatment.treatment,
         label: treatment.label,
