@@ -18,7 +18,7 @@ defmodule Split.RPC.ResponseParser do
   """
   @spec parse_response(response :: splitd_response(), request :: Message.t(), [
           {:span_context, reference()} | {:span_context, nil}
-        ]) :: map() | list() | Treatment.t() | Split.t() | boolean() | nil
+        ]) :: map() | list() | Treatment.t() | SplitView.t() | boolean() | nil
 
   def parse_response(response, original_request, opts \\ [])
 
