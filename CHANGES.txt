@@ -1,4 +1,5 @@
 0.2.0 (February XX, 2025):
+ - Added new variations of the get treatment methods to support evaluating flags in given flag set/s: `Split.get_treatments_by_flag_set`, `Split.get_treatments_by_flag_sets`, `Split.get_treatments_with_config_by_flag_set`, and `Split.get_treatments_with_config_by_flag_sets`.
  - BREAKING CHANGES:
     - Removed the `fallback_enabled` option from the `Split.Supervisor.start_link/1` function. The fallback behavior is now always enabled.
     - Updated the return type of `Split` functions to never return `{:error, _}` tuples. Instead, they will use the fallback value when an error occurs.
