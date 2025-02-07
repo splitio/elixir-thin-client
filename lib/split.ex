@@ -88,8 +88,7 @@ defmodule Split do
     execute_rpc(request).treatment
   end
 
-  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) ::
-          Treatment.t()
+  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) :: Treatment.t()
   def get_treatment_with_config(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
@@ -123,6 +122,79 @@ defmodule Split do
       Message.get_treatments_with_config(
         key: key,
         feature_names: feature_names,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
+  end
+
+  @spec get_treatments_by_flag_set(split_key(), String.t(), map() | nil) :: %{
+          String.t() => String.t()
+        }
+  def get_treatments_by_flag_set(key, flag_set_name, attributes \\ %{}) do
+    request =
+      Message.get_treatments_by_flag_set(
+        key: key,
+        feature_name: flag_set_name,
+        attributes: attributes
+      )
+
+    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
+  end
+
+  @spec get_treatments_with_config_by_flag_set(
+          split_key(),
+          String.t(),
+          map() | nil
+        ) ::
+          %{String.t() => Treatment.t()}
+  def get_treatments_with_config_by_flag_set(
+        key,
+        flag_set_name,
+        attributes \\ %{}
+      ) do
+    request =
+      Message.get_treatments_with_config_by_flag_set(
+        key: key,
+        feature_name: flag_set_name,
+        attributes: attributes
+      )
+
+    execute_rpc(request)
+  end
+
+  @spec get_treatments_by_flag_sets(split_key(), [String.t()], map() | nil) ::
+          %{String.t() => String.t()}
+  def get_treatments_by_flag_sets(
+        key,
+        flag_set_names,
+        attributes \\ %{}
+      ) do
+    request =
+      Message.get_treatments_by_flag_sets(
+        key: key,
+        feature_names: flag_set_names,
+        attributes: attributes
+      )
+
+    execute_rpc(request) |> Enum.into(%{}, fn {key, treatment} -> {key, treatment.treatment} end)
+  end
+
+  @spec get_treatments_with_config_by_flag_sets(
+          split_key(),
+          [String.t()],
+          map() | nil
+        ) ::
+          %{String.t() => Treatment.t()}
+  def get_treatments_with_config_by_flag_sets(
+        key,
+        flag_set_names,
+        attributes \\ %{}
+      ) do
+    request =
+      Message.get_treatments_with_config_by_flag_sets(
+        key: key,
+        feature_names: flag_set_names,
         attributes: attributes
       )
 

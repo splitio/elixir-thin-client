@@ -62,6 +62,17 @@ defmodule Split.RPC.Fallback do
     treatments
   end
 
+  def fallback(%Message{o: opcode, a: _})
+      when opcode in [
+             @get_treatments_by_flag_set_opcode,
+             @get_treatments_with_config_by_flag_set_opcode,
+             @get_treatments_by_flag_sets_opcode,
+             @get_treatments_with_config_by_flag_sets_opcode
+           ] do
+
+    %{} # Empty map since we don't have a way to know the feature names
+  end
+
   def fallback(%Message{o: @split_opcode}) do
     nil
   end

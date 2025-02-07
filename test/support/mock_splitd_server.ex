@@ -105,6 +105,18 @@ defmodule Split.Test.MockSplitdServer do
     %{"s" => 1, "p" => %{"r" => [%{"t" => "on", "c" => %{"foo" => "bar"}}]}}
   end
 
+  defp build_response(21), do: %{"s" => 1, "p" => %{"r" => %{"emi_test" => %{"t" => "on"}}}}
+
+  defp build_response(22) do
+    %{"s" => 1, "p" => %{"r" => %{"emi_test" => %{"t" => "on", "c" => %{"foo" => "bar"}}}}}
+  end
+
+  defp build_response(23), do: %{"s" => 1, "p" => %{"r" => %{"emi_test" => %{"t" => "on"}}}}
+
+  defp build_response(24) do
+    %{"s" => 1, "p" => %{"r" => %{"emi_test" => %{"t" => "on", "c" => %{"foo" => "bar"}}}}}
+  end
+
   defp build_response(128), do: %{"s" => 1, "p" => %{"s" => true}}
   defp build_response(160), do: %{"s" => 1, "p" => %{"n" => ["ethan_test"]}}
 
