@@ -15,5 +15,6 @@ jobs:
           otp-version: ${{matrix.otp}}
           elixir-version: ${{matrix.elixir}}
       - run: mix deps.unlock --all # compiles and runs tests against latest versions of dependencies
+      - run: mix deps.get
       - run: mix test
       - run: mix dialyzer --format github
