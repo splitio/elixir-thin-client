@@ -10,10 +10,9 @@ defmodule SplitThinElixir.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       runtime_tools: [:observer],
-      package: package(),
+      package: package()
     ]
   end
-
 
   # Package-specific metadata for Hex.pm
   defp package do
@@ -25,7 +24,7 @@ defmodule SplitThinElixir.MixProject do
         "GitHub" => "https://github.com/splitio/elixir-thin-client",
         "Docs" => "https://hexdocs.pm/split_thin_sdk"
       },
-      maintainers: ["Emiliano Sanchez", "Nicolas Zelaya", "split-fme-libraries@harness.io"],
+      maintainers: ["Emiliano Sanchez", "Nicolas Zelaya", "split-fme-libraries@harness.io"]
     ]
   end
 
