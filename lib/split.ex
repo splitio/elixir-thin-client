@@ -49,10 +49,10 @@ defmodule Split do
   Split.get_treatment("user_key", "feature_name")
   ```
   """
-  alias Split.SplitView
   alias Split.Telemetry
-  alias Split.TreatmentWithConfig
   alias Split.Sockets.Pool
+  alias Split.TreatmentWithConfig
+  alias Split.SplitView
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
 
