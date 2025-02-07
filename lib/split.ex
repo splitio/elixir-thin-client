@@ -64,7 +64,13 @@ defmodule Split do
 
   @type options :: [option()]
 
-  @type split_key :: String.t() | {:matching_key, String.t(), :bucketing_key, String.t() | nil}
+  @typedoc """
+  The [traffic type identifier](https://help.split.io/hc/en-us/articles/360019916311-Traffic-types).
+  It can be either a string or a map with a matching key and an optional bucketing key.
+  """
+  @type split_key ::
+          String.t()
+          | %{required(:matchingKey) => String.t(), optional(:bucketingKey) => String.t() | nil}
 
   @doc """
   Builds a child specification to use in a Supervisor.

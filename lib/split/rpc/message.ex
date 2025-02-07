@@ -237,7 +237,7 @@ defmodule Split.RPC.Message do
       }
 
       iex> Message.get_treatments_with_config_by_flag_sets(
-      ...>   key: "user_key",
+      ...>   key: %{:matching_key => "user_key"},
       ...>   feature_names: ["flag_set_name1", "flag_set_name2"]
       ...> )
       %Message{
@@ -364,7 +364,7 @@ defmodule Split.RPC.Message do
 
     {matching_key, bucketing_key} =
       if is_map(key) do
-        {key.matching_key, key.bucketing_key}
+        {key.matching_key, Map.get(key, :bucketing_key, nil)}
       else
         {key, nil}
       end
