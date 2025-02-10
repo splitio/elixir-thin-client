@@ -10,27 +10,23 @@ defmodule Split do
   The most basic approach is to add `Split` as a child of your application's
   top-most supervisor, i.e. `lib/my_app/application.ex`.
 
-  ```elixir
-  defmodule MyApp.Application do
-    use Application
+      defmodule MyApp.Application do
+        use Application
 
-    def start(_type, _args) do
-      children = [
-        # ... other children ...
-        {Split, [socket_path: "/var/run/split.sock"]}
-      ]
+        def start(_type, _args) do
+          children = [
+            # ... other children ...
+            {Split, [socket_path: "/var/run/split.sock"]}
+          ]
 
-      opts = [strategy: :one_for_one, name: MyApp.Supervisor]
-      Supervisor.start_link(children, opts)
-    end
-  end
-  ```
+          opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+          Supervisor.start_link(children, opts)
+        end
+      end
 
   You can also start `Split` dynamically by calling `Split.Supervisor.start_link/1`:
 
-  ```elixir
-  Split.Supervisor.start_link(opts)
-  ```
+      Split.Supervisor.start_link(opts)
 
   ### Options
 
@@ -45,9 +41,7 @@ defmodule Split do
 
   Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon to access feature flags and configurations.
 
-  ```elixir
-  Split.get_treatment("user_key", "feature_name")
-  ```
+      Split.get_treatment("user_key", "feature_name")
   """
   alias Split.Telemetry
   alias Split.Sockets.Pool
