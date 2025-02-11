@@ -6,7 +6,7 @@ defmodule SplitThinElixirTest do
   alias Split.SplitView
 
   setup_all context do
-    test_id = :erlang.phash2(context.case)
+    test_id = :erlang.phash2(context.module)
     socket_path = "/tmp/test-splitd-#{test_id}.sock"
 
     start_supervised!(
