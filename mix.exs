@@ -10,7 +10,18 @@ defmodule SplitThinElixir.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       runtime_tools: [:observer],
-      package: package()
+      package: package(),
+      docs: [
+        filter_modules: fn mod, _meta ->
+          # Skip modules that are not part of the public API
+          mod in [
+            Split,
+            Split.Supervisor,
+            Split.SplitView,
+            Split.TreatmentWithConfig
+          ]
+        end
+      ]
     ]
   end
 

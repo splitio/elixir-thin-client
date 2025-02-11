@@ -1,4 +1,8 @@
 defmodule Split.Supervisor do
+  @moduledoc """
+  The supervisor for the Split SDK.
+  """
+
   use GenServer
 
   alias Split.Sockets.Pool
@@ -7,7 +11,7 @@ defmodule Split.Supervisor do
     {:ok, init_arg}
   end
 
-  @spec start_link(keyword()) :: Supervisor.on_start()
+  @spec start_link(Split.options()) :: Supervisor.on_start()
   def start_link(opts) do
     child = {Pool, opts}
     Supervisor.start_link([child], strategy: :one_for_one)
