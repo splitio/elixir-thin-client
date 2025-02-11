@@ -9,7 +9,7 @@ This SDK is designed to work with Split, the platform for controlled rollouts, w
 
 ## Compatibility
 
-The Elixir Thin Client SDK is compatible with Elixir @TODO and later.
+The Elixir Thin Client SDK is compatible with Elixir v1.14.0 and later.
 
 ## Getting started
 
