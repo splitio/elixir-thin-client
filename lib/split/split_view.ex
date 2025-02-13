@@ -32,7 +32,7 @@ defmodule Split.SplitView do
           killed: boolean(),
           treatments: [String.t()],
           change_number: integer(),
-          configs: map(),
+          configs: %{String.t() => String.t() | nil},
           default_treatment: String.t(),
           sets: [String.t()],
           impressions_disabled: boolean()

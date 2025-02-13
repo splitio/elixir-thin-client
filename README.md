@@ -9,7 +9,7 @@ This SDK is designed to work with Split, the platform for controlled rollouts, w
 
 ## Compatibility
 
-The Elixir Thin Client SDK is compatible with Elixir v1.14.0 and later, and requires [Splitd deamon](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd#local-deployment-recommended) v1.2.0 or later.
+The Elixir Thin Client SDK is compatible with Elixir v1.14.0 and later, and requires [Splitd daemon](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd#local-deployment-recommended) v1.2.0 or later.
 
 ## Getting started
 
@@ -32,7 +32,7 @@ After adding the dependency, run `mix deps.get` to fetch the new dependency.
 
 Below is a simple example that describes the instantiation and most basic usage of our SDK.
 
-**NOTE:** Keep in mind that Elixir SDK requires an [Splitd deamon](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd#local-deployment-recommended) instance running in your infrastructure to connect to, with the link type set to `unix-stream`.
+**NOTE:** Keep in mind that Elixir SDK requires an [Splitd daemon](https://help.split.io/hc/en-us/articles/18305269686157-Split-Daemon-splitd#local-deployment-recommended) instance running in your infrastructure to connect to, with the link type set to `unix-stream`.
 
 ```elixir
 # Start the SDK supervisor

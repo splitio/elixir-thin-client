@@ -67,6 +67,17 @@ defmodule Split do
           String.t()
           | %{required(:matchingKey) => String.t(), optional(:bucketingKey) => String.t() | nil}
 
+  @typedoc "A map of attributes to use when evaluating feature flags."
+  @type attributes :: %{
+          optional(atom() | String.t()) =>
+            String.t() | integer() | boolean() | [String.t() | integer()] | nil
+        }
+
+  @typedoc "A map of properties to use when tracking an event."
+  @type properties :: %{
+          optional(atom() | String.t()) => String.t() | integer() | boolean() | nil
+        }
+
   @doc """
   Builds a child specification to use in a Supervisor.
 
@@ -87,7 +98,7 @@ defmodule Split do
       iex> Split.get_treatment("user_id", "located_in_usa", %{country: "USA"})
       "on"
   """
-  @spec get_treatment(split_key(), String.t(), map() | nil) :: String.t()
+  @spec get_treatment(split_key(), String.t(), attributes() | nil) :: String.t()
   def get_treatment(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment(
@@ -109,7 +120,8 @@ defmodule Split do
       iex> Split.get_treatment("user_id", "located_in_usa", %{country: "USA"})
       %Split.TreatmentWithConfig{treatment: "on", config: nil}
   """
-  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) :: TreatmentWithConfig.t()
+  @spec get_treatment_with_config(split_key(), String.t(), attributes() | nil) ::
+          TreatmentWithConfig.t()
   def get_treatment_with_config(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
@@ -131,7 +143,7 @@ defmodule Split do
       iex> Split.get_treatments("user_id", ["located_in_usa"], %{country: "USA"})
       %{"located_in_usa" => "on"}
   """
-  @spec get_treatments(split_key(), [String.t()], map() | nil) :: %{
+  @spec get_treatments(split_key(), [String.t()], attributes() | nil) :: %{
           String.t() => String.t()
         }
   def get_treatments(key, feature_names, attributes \\ %{}) do
@@ -155,7 +167,7 @@ defmodule Split do
       iex> Split.get_treatments_with_config("user_id", ["located_in_usa"], %{country: "USA"})
       %{"located_in_usa" => %Split.TreatmentWithConfig{treatment: "on", config: nil}}
   """
-  @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) :: %{
+  @spec get_treatments_with_config(split_key(), [String.t()], attributes() | nil) :: %{
           String.t() => TreatmentWithConfig.t()
         }
   def get_treatments_with_config(key, feature_names, attributes \\ %{}) do
@@ -179,7 +191,7 @@ defmodule Split do
       iex> Split.get_treatments_by_flag_set("user_id", "frontend_flags", %{country: "USA"})
       %{"located_in_usa" => "on"}
   """
-  @spec get_treatments_by_flag_set(split_key(), String.t(), map() | nil) :: %{
+  @spec get_treatments_by_flag_set(split_key(), String.t(), attributes() | nil) :: %{
           String.t() => String.t()
         }
   def get_treatments_by_flag_set(key, flag_set_name, attributes \\ %{}) do
@@ -206,7 +218,7 @@ defmodule Split do
   @spec get_treatments_with_config_by_flag_set(
           split_key(),
           String.t(),
-          map() | nil
+          attributes() | nil
         ) ::
           %{String.t() => TreatmentWithConfig.t()}
   def get_treatments_with_config_by_flag_set(
@@ -234,7 +246,7 @@ defmodule Split do
       iex> Split.get_treatments_by_flag_sets("user_id", ["frontend_flags", "backend_flags"], %{country: "USA"})
       %{"located_in_usa" => "on"}
   """
-  @spec get_treatments_by_flag_sets(split_key(), [String.t()], map() | nil) ::
+  @spec get_treatments_by_flag_sets(split_key(), [String.t()], attributes() | nil) ::
           %{String.t() => String.t()}
   def get_treatments_by_flag_sets(
         key,
@@ -264,7 +276,7 @@ defmodule Split do
   @spec get_treatments_with_config_by_flag_sets(
           split_key(),
           [String.t()],
-          map() | nil
+          attributes() | nil
         ) ::
           %{String.t() => TreatmentWithConfig.t()}
   def get_treatments_with_config_by_flag_sets(
@@ -297,7 +309,8 @@ defmodule Split do
       iex> Split.track("user_id", "user", "my-event", 42, %{property1: "value1"})
       true
   """
-  @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) :: boolean()
+  @spec track(split_key(), String.t(), String.t(), number() | nil, properties() | nil) ::
+          boolean()
   def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     request = Message.track(key, traffic_type, event_type, value, properties)
     execute_rpc(request)

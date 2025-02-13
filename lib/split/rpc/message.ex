@@ -24,12 +24,12 @@ defmodule Split.RPC.Message do
   @type get_treatment_args ::
           {:key, Split.split_key()}
           | {:feature_name, String.t()}
-          | {:attributes, map() | nil}
+          | {:attributes, Split.attributes() | nil}
 
   @type get_treatments_args ::
           {:key, Split.split_key()}
           | {:feature_names, list(String.t())}
-          | {:attributes, map() | nil}
+          | {:attributes, Split.attributes() | nil}
 
   @doc """
   Builds a message to register a client in splitd.
@@ -49,7 +49,8 @@ defmodule Split.RPC.Message do
 
       iex> Message.get_treatment(
       ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
-      ...>   feature_name: "feature_name"
+      ...>   feature_name: "feature_name",
+      ...>   attributes: %{}
       ...> )
       %Message{a: ["user_key", "bucketing_key", "feature_name", %{}], o: 17, v: 1}
 
@@ -68,9 +69,10 @@ defmodule Split.RPC.Message do
 
       iex> Message.get_treatment_with_config(
       ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
-      ...>   feature_name: "feature_name"
+      ...>   feature_name: "feature_name",
+      ...>   attributes: %{"foo" => "bar", :baz => 1}
       ...> )
-      %Message{a: ["user_key", "bucketing_key", "feature_name", %{}], o: 19, v: 1}
+      %Message{a: ["user_key", "bucketing_key", "feature_name", %{"foo" => "bar", :baz => 1}], o: 19, v: 1}
 
       iex> Message.get_treatment_with_config(
       ...>   key: "user_key",
@@ -289,7 +291,7 @@ defmodule Split.RPC.Message do
 
   ## Examples
 
-      iex> Message.track("user_key", "traffic_type", "my_event", 1.5, %{foo: "bar"})
+      iex> Message.track("user_key", "traffic_type", "my_event", 1.5, %{:foo => "bar"})
       %Message{
         v: 1,
         o: 128,
@@ -299,11 +301,19 @@ defmodule Split.RPC.Message do
       iex> Message.track("user_key", "traffic_type", "my_event")
       %Message{v: 1, o: 128, a: ["user_key", "traffic_type", "my_event", nil, %{}]}
   """
-  @spec track(String.t(), String.t(), String.t(), any(), map()) :: t()
+  @spec track(Split.split_key(), String.t(), String.t(), number() | nil, Split.properties()) ::
+          t()
   def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
+    matching_key =
+      if is_map(key) do
+        key.matching_key
+      else
+        key
+      end
+
     %__MODULE__{
       o: @track_opcode,
-      a: [key, traffic_type, event_type, value, properties]
+      a: [matching_key, traffic_type, event_type, value, properties]
     }
   end
 
@@ -323,6 +333,18 @@ defmodule Split.RPC.Message do
 
     iex> Message.opcode_to_rpc_name(@get_treatments_with_config_opcode)
     :get_treatments_with_config
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_by_flag_set_opcode)
+    :get_treatments_by_flag_set
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_with_config_by_flag_set_opcode)
+    :get_treatments_with_config_by_flag_set
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_by_flag_sets_opcode)
+    :get_treatments_by_flag_sets
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_with_config_by_flag_sets_opcode)
+    :get_treatments_with_config_by_flag_sets
 
     iex> Message.opcode_to_rpc_name(@split_opcode)
     :split
