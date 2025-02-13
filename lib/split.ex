@@ -50,7 +50,7 @@ defmodule Split do
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
 
-  @typedoc "An option that can be provided when starting `Split`."
+  @typedoc "An option that can be provided when starting `Split`. See [options](#module-options) for more information."
   @type option ::
           {:socket_path, String.t()}
           | {:pool_size, non_neg_integer()}

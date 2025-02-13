@@ -1,5 +1,5 @@
 defmodule Split.RPC.Message do
-  @doc """
+  @moduledoc """
   Represents an RPC message to be sent to splitd.
   """
   use Split.RPC.Opcodes

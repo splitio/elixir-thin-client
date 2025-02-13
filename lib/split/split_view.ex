@@ -1,6 +1,6 @@
 defmodule Split.SplitView do
   @moduledoc """
-  This module is a struct that contains information of a feature flag.
+  This module defines a struct that contains information about a feature flag.
 
   ## Fields
     * `:name` - The name of the feature flag
