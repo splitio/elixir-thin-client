@@ -24,12 +24,12 @@ defmodule Split.RPC.Message do
   @type get_treatment_args ::
           {:key, Split.split_key()}
           | {:feature_name, String.t()}
-          | {:attributes, Split.attributes() | nil}
+          | {:attributes, Split.attributes()}
 
   @type get_treatments_args ::
           {:key, Split.split_key()}
           | {:feature_names, list(String.t())}
-          | {:attributes, Split.attributes() | nil}
+          | {:attributes, Split.attributes()}
 
   @doc """
   Builds a message to register a client in splitd.
@@ -301,6 +301,8 @@ defmodule Split.RPC.Message do
       iex> Message.track("user_key", "traffic_type", "my_event")
       %Message{v: 1, o: 128, a: ["user_key", "traffic_type", "my_event", nil, %{}]}
   """
+  @spec track(Split.split_key(), String.t(), String.t()) :: t()
+  @spec track(Split.split_key(), String.t(), String.t(), number() | nil) :: t()
   @spec track(Split.split_key(), String.t(), String.t(), number() | nil, Split.properties()) ::
           t()
   def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do

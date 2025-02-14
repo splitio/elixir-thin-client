@@ -17,11 +17,13 @@ defmodule Split.Sockets.Pool do
   end
 
   def start_link(opts) do
+    socket_path = Keyword.get(opts, :socket_path, "/var/run/splitd.sock")
     pool_name = Keyword.get(opts, :pool_name, __MODULE__)
     pool_size = Keyword.get(opts, :pool_size, System.schedulers_online())
 
     opts =
       opts
+      |> Keyword.put_new(:socket_path, socket_path)
       |> Keyword.put_new(:pool_size, pool_size)
       |> Keyword.put_new(:pool_name, pool_name)
 
