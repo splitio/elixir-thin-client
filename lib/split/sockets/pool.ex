@@ -16,24 +16,20 @@ defmodule Split.Sockets.Pool do
     }
   end
 
-  def start_link(opts) when is_list(opts) do
-    start_link(Map.new(opts))
+  def start_link(opts) when is_map(opts) do
+    start_link(Map.to_list(opts))
   end
 
-  def start_link(opts) when is_map(opts) do
-    socket_path = Map.get(opts, :socket_path, "/var/run/splitd.sock")
-    fallback_enabled = Map.get(opts, :fallback_enabled, false)
-    :persistent_term.put(:splitd_fallback_enabled, fallback_enabled)
-
-    pool_name = Map.get(opts, :pool_name, __MODULE__)
-    pool_size = Map.get(opts, :pool_size, System.schedulers_online())
+  def start_link(opts) when is_list(opts) do
+    socket_path = Keyword.get(opts, :socket_path, "/var/run/splitd.sock")
+    pool_name = Keyword.get(opts, :pool_name, __MODULE__)
+    pool_size = Keyword.get(opts, :pool_size, System.schedulers_online())
 
     opts =
       opts
-      |> Map.put_new(:socket_path, socket_path)
-      |> Map.put_new(:fallback_enabled, fallback_enabled)
-      |> Map.put_new(:pool_size, pool_size)
-      |> Map.put_new(:pool_name, pool_name)
+      |> Keyword.put_new(:socket_path, socket_path)
+      |> Keyword.put_new(:pool_size, pool_size)
+      |> Keyword.put_new(:pool_name, pool_name)
 
     NimblePool.start_link(
       worker: {__MODULE__, opts},
@@ -107,7 +103,9 @@ defmodule Split.Sockets.Pool do
   end
 
   @impl NimblePool
-  def init_pool(%{socket_path: socket_path} = opts) do
+  def init_pool(opts) do
+    socket_path = Keyword.get(opts, :socket_path)
+
     unless File.exists?(socket_path) do
       Logger.error("""
       The Split Daemon (splitd) socket was not found at #{socket_path}.
@@ -122,8 +120,8 @@ defmodule Split.Sockets.Pool do
   end
 
   @impl NimblePool
-  def init_worker({%{socket_path: socket_path} = opts, _metrics_ref} = pool_state) do
-    {:ok, Conn.new(socket_path, opts), pool_state}
+  def init_worker({opts, _metrics_ref} = pool_state) do
+    {:ok, Conn.new(Keyword.get(opts, :socket_path), opts), pool_state}
   end
 
   @impl NimblePool

@@ -2,14 +2,13 @@ defmodule Split.Sockets.PoolTest do
   use ExUnit.Case
 
   alias Split.RPC.Message
-  alias Split.Sockets.Supervisor
   alias Split.Sockets.Pool
   alias Split.Sockets.PoolMetrics
 
   import ExUnit.CaptureLog
 
   setup_all context do
-    test_id = :erlang.phash2(context.case)
+    test_id = :erlang.phash2(context.module)
     socket_path = "/tmp/test-splitd-#{test_id}.sock"
 
     start_supervised!(
@@ -18,9 +17,7 @@ defmodule Split.Sockets.PoolTest do
 
     Split.Test.MockSplitdServer.wait_until_listening(socket_path)
 
-    start_supervised!(
-      {Supervisor, %{socket_path: socket_path, pool_name: __MODULE__, pool_size: 10}}
-    )
+    start_supervised!({Split, socket_path: socket_path, pool_name: __MODULE__, pool_size: 10})
 
     :ok
   end

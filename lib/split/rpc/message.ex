@@ -1,5 +1,5 @@
 defmodule Split.RPC.Message do
-  @doc """
+  @moduledoc """
   Represents an RPC message to be sent to splitd.
   """
   use Split.RPC.Opcodes
@@ -22,16 +22,14 @@ defmodule Split.RPC.Message do
         }
 
   @type get_treatment_args ::
-          {:user_key, String.t()}
+          {:key, Split.split_key()}
           | {:feature_name, String.t()}
-          | {:bucketing_key, String.t() | nil}
-          | {:attributes, map() | nil}
+          | {:attributes, Split.attributes() | nil}
 
   @type get_treatments_args ::
-          {:user_key, String.t()}
+          {:key, Split.split_key()}
           | {:feature_names, list(String.t())}
-          | {:bucketing_key, String.t() | nil}
-          | {:attributes, map() | nil}
+          | {:attributes, Split.attributes() | nil}
 
   @doc """
   Builds a message to register a client in splitd.
@@ -50,13 +48,13 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatment(
-      ...>   user_key: "user_key",
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
       ...>   feature_name: "feature_name",
-      ...>   bucketing_key: "bucketing_key"
+      ...>   attributes: %{}
       ...> )
       %Message{a: ["user_key", "bucketing_key", "feature_name", %{}], o: 17, v: 1}
 
-      iex> Message.get_treatment(user_key: "user_key", feature_name: "feature_name")
+      iex> Message.get_treatment(key: "user_key", feature_name: "feature_name")
       %Message{a: ["user_key", nil, "feature_name", %{}], o: 17, v: 1}
   """
   @spec get_treatment([get_treatment_args()]) :: t()
@@ -70,14 +68,14 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatment_with_config(
-      ...>   user_key: "user_key",
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
       ...>   feature_name: "feature_name",
-      ...>   bucketing_key: "bucketing_key"
+      ...>   attributes: %{"foo" => "bar", :baz => 1}
       ...> )
-      %Message{a: ["user_key", "bucketing_key", "feature_name", %{}], o: 19, v: 1}
+      %Message{a: ["user_key", "bucketing_key", "feature_name", %{"foo" => "bar", :baz => 1}], o: 19, v: 1}
 
       iex> Message.get_treatment_with_config(
-      ...>   user_key: "user_key",
+      ...>   key: "user_key",
       ...>   feature_name: "feature_name"
       ...> )
       %Message{a: ["user_key", nil, "feature_name", %{}], o: 19, v: 1}
@@ -93,9 +91,8 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatments(
-      ...>   user_key: "user_key",
-      ...>   feature_names: ["feature_name1", "feature_name2"],
-      ...>   bucketing_key: "bucketing_key"
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_names: ["feature_name1", "feature_name2"]
       ...> )
       %Message{
         a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"], %{}],
@@ -104,7 +101,7 @@ defmodule Split.RPC.Message do
       }
 
       iex> Message.get_treatments(
-      ...>   user_key: "user_key",
+      ...>   key: "user_key",
       ...>   feature_names: ["feature_name1", "feature_name2"]
       ...> )
       %Message{a: ["user_key", nil, ["feature_name1", "feature_name2"], %{}], o: 18, v: 1}
@@ -120,9 +117,8 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.get_treatments_with_config(
-      ...>   user_key: "user_key",
-      ...>   feature_names: ["feature_name1", "feature_name2"],
-      ...>   bucketing_key: "bucketing_key"
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_names: ["feature_name1", "feature_name2"]
       ...> )
       %Message{
         a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"], %{}],
@@ -131,7 +127,7 @@ defmodule Split.RPC.Message do
       }
 
       iex> Message.get_treatments_with_config(
-      ...>   user_key: "user_key",
+      ...>   key: "user_key",
       ...>   feature_names: ["feature_name1", "feature_name2"]
       ...> )
       %Message{
@@ -143,6 +139,118 @@ defmodule Split.RPC.Message do
   @spec get_treatments_with_config([get_treatments_args()]) :: t()
   def get_treatments_with_config(opts) do
     treatment_payload(opts, @get_treatments_with_config_opcode, multiple: true)
+  end
+
+  @doc """
+  Builds a message to get the treatments for a flag set.
+
+  ## Examples
+
+      iex> Message.get_treatments_by_flag_set(
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_name: "flag_set_name"
+      ...> )
+      %Message{
+        a: ["user_key", "bucketing_key", "flag_set_name", %{}],
+        o: 21,
+        v: 1
+      }
+
+      iex> Message.get_treatments_by_flag_set(
+      ...>   key: "user_key",
+      ...>   feature_name: "flag_set_name"
+      ...> )
+      %Message{a: ["user_key", nil, "flag_set_name", %{}], o: 21, v: 1}
+  """
+  @spec get_treatments_by_flag_set([get_treatment_args()]) :: t()
+  def get_treatments_by_flag_set(opts) do
+    treatment_payload(opts, @get_treatments_by_flag_set_opcode, multiple: false)
+  end
+
+  @doc """
+  Builds a message to get the treatments for a flag set with configuration.
+
+  ## Examples
+
+      iex> Message.get_treatments_with_config_by_flag_set(
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_name: "flag_set_name"
+      ...> )
+      %Message{
+        a: ["user_key", "bucketing_key", "flag_set_name", %{}],
+        o: 22,
+        v: 1
+      }
+
+      iex> Message.get_treatments_with_config_by_flag_set(
+      ...>   key: "user_key",
+      ...>   feature_name: "flag_set_name"
+      ...> )
+      %Message{
+        a: ["user_key", nil, "flag_set_name", %{}],
+        o: 22,
+        v: 1
+      }
+  """
+  @spec get_treatments_with_config_by_flag_set([get_treatment_args()]) :: t()
+  def get_treatments_with_config_by_flag_set(opts) do
+    treatment_payload(opts, @get_treatments_with_config_by_flag_set_opcode, multiple: false)
+  end
+
+  @doc """
+  Builds a message to get the treatments for multiple flag sets.
+
+  ## Examples
+
+      iex> Message.get_treatments_by_flag_sets(
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_names: ["flag_set_name1", "flag_set_name2"]
+      ...> )
+      %Message{
+        a: ["user_key", "bucketing_key", ["flag_set_name1", "flag_set_name2"], %{}],
+        o: 23,
+        v: 1
+      }
+
+      iex> Message.get_treatments_by_flag_sets(
+      ...>   key: "user_key",
+      ...>   feature_names: ["flag_set_name1", "flag_set_name2"]
+      ...> )
+      %Message{a: ["user_key", nil, ["flag_set_name1", "flag_set_name2"], %{}], o: 23, v: 1}
+  """
+  @spec get_treatments_by_flag_sets([get_treatments_args()]) :: t()
+  def get_treatments_by_flag_sets(opts) do
+    treatment_payload(opts, @get_treatments_by_flag_sets_opcode, multiple: true)
+  end
+
+  @doc """
+  Builds a message to get the treatments for multiple flag sets with configuration.
+
+  ## Examples
+
+      iex> Message.get_treatments_with_config_by_flag_sets(
+      ...>   key: %{:matching_key => "user_key", :bucketing_key => "bucketing_key"},
+      ...>   feature_names: ["flag_set_name1", "flag_set_name2"]
+      ...> )
+      %Message{
+        a: ["user_key", "bucketing_key", ["flag_set_name1", "flag_set_name2"], %{}],
+        o: 24,
+        v: 1
+      }
+
+      iex> Message.get_treatments_with_config_by_flag_sets(
+      ...>   key: %{:matching_key => "user_key"},
+      ...>   feature_names: ["flag_set_name1", "flag_set_name2"]
+      ...> )
+      %Message{
+        a: ["user_key", nil, ["flag_set_name1", "flag_set_name2"], %{}],
+        o: 24,
+        v: 1
+      }
+  """
+  @spec get_treatments_with_config_by_flag_sets([get_treatments_args()]) :: t()
+  def get_treatments_with_config_by_flag_sets(opts) do
+    treatment_payload(opts, @get_treatments_with_config_by_flag_sets_opcode, multiple: true)
   end
 
   @doc """
@@ -183,7 +291,7 @@ defmodule Split.RPC.Message do
 
   ## Examples
 
-      iex> Message.track("user_key", "traffic_type", "my_event", 1.5, %{foo: "bar"})
+      iex> Message.track("user_key", "traffic_type", "my_event", 1.5, %{:foo => "bar"})
       %Message{
         v: 1,
         o: 128,
@@ -193,11 +301,19 @@ defmodule Split.RPC.Message do
       iex> Message.track("user_key", "traffic_type", "my_event")
       %Message{v: 1, o: 128, a: ["user_key", "traffic_type", "my_event", nil, %{}]}
   """
-  @spec track(String.t(), String.t(), String.t(), any(), map()) :: t()
-  def track(user_key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
+  @spec track(Split.split_key(), String.t(), String.t(), number() | nil, Split.properties()) ::
+          t()
+  def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
+    matching_key =
+      if is_map(key) do
+        key.matching_key
+      else
+        key
+      end
+
     %__MODULE__{
       o: @track_opcode,
-      a: [user_key, traffic_type, event_type, value, properties]
+      a: [matching_key, traffic_type, event_type, value, properties]
     }
   end
 
@@ -218,6 +334,18 @@ defmodule Split.RPC.Message do
     iex> Message.opcode_to_rpc_name(@get_treatments_with_config_opcode)
     :get_treatments_with_config
 
+    iex> Message.opcode_to_rpc_name(@get_treatments_by_flag_set_opcode)
+    :get_treatments_by_flag_set
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_with_config_by_flag_set_opcode)
+    :get_treatments_with_config_by_flag_set
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_by_flag_sets_opcode)
+    :get_treatments_by_flag_sets
+
+    iex> Message.opcode_to_rpc_name(@get_treatments_with_config_by_flag_sets_opcode)
+    :get_treatments_with_config_by_flag_sets
+
     iex> Message.opcode_to_rpc_name(@split_opcode)
     :split
 
@@ -235,6 +363,16 @@ defmodule Split.RPC.Message do
   def opcode_to_rpc_name(@get_treatments_opcode), do: :get_treatments
   def opcode_to_rpc_name(@get_treatment_with_config_opcode), do: :get_treatment_with_config
   def opcode_to_rpc_name(@get_treatments_with_config_opcode), do: :get_treatments_with_config
+  def opcode_to_rpc_name(@get_treatments_by_flag_set_opcode), do: :get_treatments_by_flag_set
+
+  def opcode_to_rpc_name(@get_treatments_with_config_by_flag_set_opcode),
+    do: :get_treatments_with_config_by_flag_set
+
+  def opcode_to_rpc_name(@get_treatments_by_flag_sets_opcode), do: :get_treatments_by_flag_sets
+
+  def opcode_to_rpc_name(@get_treatments_with_config_by_flag_sets_opcode),
+    do: :get_treatments_with_config_by_flag_sets
+
   def opcode_to_rpc_name(@split_opcode), do: :split
   def opcode_to_rpc_name(@splits_opcode), do: :splits
   def opcode_to_rpc_name(@split_names_opcode), do: :split_names
@@ -244,15 +382,22 @@ defmodule Split.RPC.Message do
     features_key =
       if Keyword.get(opts, :multiple, false), do: :feature_names, else: :feature_name
 
-    user_key = Keyword.fetch!(data, :user_key)
+    key = Keyword.fetch!(data, :key)
+
+    {matching_key, bucketing_key} =
+      if is_map(key) do
+        {key.matching_key, Map.get(key, :bucketing_key, nil)}
+      else
+        {key, nil}
+      end
+
     feature_name = Keyword.fetch!(data, features_key)
-    bucketing_key = Keyword.get(data, :bucketing_key, nil)
     attributes = Keyword.get(data, :attributes, %{})
 
     %__MODULE__{
       o: opcode,
       a: [
-        user_key,
+        matching_key,
         bucketing_key,
         feature_name,
         attributes

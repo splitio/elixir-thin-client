@@ -1,0 +1,16 @@
+0.2.0 (February 14, 2025):
+ - Added new variations of the get treatment functions to support evaluating flags in given flag set/s: `Split.get_treatments_by_flag_set/3`, `Split.get_treatments_by_flag_sets/3`, `Split.get_treatments_with_config_by_flag_set/3`, and `Split.get_treatments_with_config_by_flag_sets/3`.
+ - BREAKING CHANGES:
+    - Removed the `fallback_enabled` option from `Split.Supervisor.start_link/1`. Fallback behavior is now always enabled, so `Split` functions no longer return `{:error, _}` tuples but instead use the fallback value when an error occurs.
+    - Renamed the `Split.Treatment` struct to `Split.TreatmentWithConfig` and removed the `label`, `change_number`, and `timestamp` fields.
+    - Moved the `Split` struct to the new `Split.SplitView` module and updated some fields: renamed `configurations` to `configs`, `flag_sets` to `sets`, and added the `impressions_disabled` field.
+    - Updated the return types of `Split.get_treatment/3` and `Split.get_treatments/3` to return a treatment string and a map of treatment strings, respectively.
+    - Updated all `get_treatment` function signatures: removed the third argument (`bucketing_key`) and expanded the first argument (`key`) to accept a union, allowing either a string or a map with a key and optional bucketing key (`%{required(:matchingKey) => String.t(), optional(:bucketingKey) => String.t() | nil}`).
+
+0.1.0 (January 27, 2025):
+ - BREAKING CHANGES:
+    - Renamed `Split.Socket.Supervisor` module to `Split.Supervisor`, and updated the project structure to use a Context which is more in line to how Elixir libraries are structured (By @codeadict in https://github.com/splitio/elixir-thin-client/pull/17).
+    - Refactored the options passed to the Split.Supervisor.start_link function to use Keywords instead of Maps to be more in line with other Elixir libraries and common practices (By @codeadict in https://github.com/splitio/elixir-thin-client/pull/17).
+
+0.0.0 (January 21, 2025):
+ - Initial public release.

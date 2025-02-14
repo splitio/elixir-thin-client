@@ -8,7 +8,8 @@ defmodule Split.RPC.ResponseParser do
   alias Split.RPC.Fallback
   alias Split.RPC.Message
   alias Split.Telemetry
-  alias Split.Treatment
+  alias Split.Impression
+  alias Split.SplitView
 
   @type splitd_response :: {:ok, map()} | {:error, term()}
 
@@ -17,11 +18,8 @@ defmodule Split.RPC.ResponseParser do
   """
   @spec parse_response(response :: splitd_response(), request :: Message.t(), [
           {:span_context, reference()} | {:span_context, nil}
-        ]) ::
-          :ok
-          | {:ok, map() | list() | Treatment.t() | Split.t() | nil}
-          | {:error, term()}
-          | :error
+        ]) :: map() | list() | Impression.t() | SplitView.t() | boolean() | nil
+
   def parse_response(response, original_request, opts \\ [])
 
   def parse_response(
@@ -33,12 +31,15 @@ defmodule Split.RPC.ResponseParser do
         _opts
       )
       when opcode in [@get_treatment_opcode, @get_treatment_with_config_opcode] do
-    treatment = Treatment.build_from_daemon_response(treatment_data)
-    user_key = Enum.at(args, 0)
+    key = Enum.at(args, 0)
+    bucketing_key = Enum.at(args, 1)
     feature_name = Enum.at(args, 2)
 
-    Telemetry.send_impression(user_key, feature_name, treatment)
-    {:ok, treatment}
+    impression =
+      Impression.build_from_daemon_response(treatment_data, key, bucketing_key, feature_name)
+
+    Telemetry.send_impression(impression)
+    impression
   end
 
   def parse_response(
@@ -50,17 +51,51 @@ defmodule Split.RPC.ResponseParser do
         _opts
       )
       when opcode in [@get_treatments_opcode, @get_treatments_with_config_opcode] do
-    treatments = Enum.map(treatments, &Treatment.build_from_daemon_response/1)
-    user_key = Enum.at(args, 0)
+    key = Enum.at(args, 0)
+    bucketing_key = Enum.at(args, 1)
     feature_names = Enum.at(args, 2)
 
-    mapped_treatments =
+    impressions =
       Enum.zip_reduce(feature_names, treatments, %{}, fn feature_name, treatment, acc ->
-        Telemetry.send_impression(user_key, feature_name, treatment)
-        Map.put(acc, feature_name, treatment)
+        impression =
+          Impression.build_from_daemon_response(treatment, key, bucketing_key, feature_name)
+
+        Telemetry.send_impression(impression)
+        Map.put(acc, feature_name, impression)
       end)
 
-    {:ok, mapped_treatments}
+    impressions
+  end
+
+  def parse_response(
+        {:ok, %{"s" => @status_ok, "p" => %{"r" => treatments}}},
+        %Message{
+          o: opcode,
+          a: args
+        },
+        _opts
+      )
+      when opcode in [
+             @get_treatments_by_flag_set_opcode,
+             @get_treatments_with_config_by_flag_set_opcode,
+             @get_treatments_by_flag_sets_opcode,
+             @get_treatments_with_config_by_flag_sets_opcode
+           ] do
+    key = Enum.at(args, 0)
+    bucketing_key = Enum.at(args, 1)
+
+    impressions =
+      treatments
+      |> Enum.map(fn {feature_name, treatment} ->
+        impression =
+          Impression.build_from_daemon_response(treatment, key, bucketing_key, feature_name)
+
+        Telemetry.send_impression(impression)
+        {feature_name, impression}
+      end)
+      |> Map.new()
+
+    impressions
   end
 
   def parse_response(
@@ -68,7 +103,7 @@ defmodule Split.RPC.ResponseParser do
         %Message{o: @split_opcode},
         _opts
       ) do
-    {:ok, parse_split(payload)}
+    parse_split(payload)
   end
 
   def parse_response(
@@ -78,7 +113,7 @@ defmodule Split.RPC.ResponseParser do
         },
         _opts
       ) do
-    {:ok, split_names}
+    split_names
   end
 
   def parse_response(
@@ -93,7 +128,7 @@ defmodule Split.RPC.ResponseParser do
         [parse_split(split) | acc]
       end)
 
-    {:ok, splits}
+    splits
   end
 
   def parse_response(
@@ -104,9 +139,9 @@ defmodule Split.RPC.ResponseParser do
         _opts
       ) do
     if tracked? do
-      :ok
+      true
     else
-      :error
+      false
     end
   end
 
@@ -120,7 +155,7 @@ defmodule Split.RPC.ResponseParser do
       response: inspect(raw_response)
     )
 
-    maybe_fallback({:error, :splitd_internal_error}, message, opts)
+    fallback(message, opts)
   end
 
   def parse_response({:ok, raw_response}, %Message{} = message, opts) do
@@ -129,7 +164,7 @@ defmodule Split.RPC.ResponseParser do
       response: inspect(raw_response)
     )
 
-    maybe_fallback({:error, :splitd_parse_error}, message, opts)
+    fallback(message, opts)
   end
 
   def parse_response({:error, reason}, request, opts) do
@@ -138,27 +173,23 @@ defmodule Split.RPC.ResponseParser do
       reason: inspect(reason)
     )
 
-    maybe_fallback({:error, reason}, request, opts)
+    fallback(request, opts)
   end
 
-  defp maybe_fallback(response, original_request, opts) do
-    if :persistent_term.get(:splitd_fallback_enabled, false) do
-      fallback_response = Fallback.fallback(original_request)
+  defp fallback(original_request, opts) do
+    fallback_response = Fallback.fallback(original_request)
 
-      if Keyword.has_key?(opts, :span_context) do
-        Telemetry.span_event([:rpc, :fallback], opts[:span_context], %{
-          response: fallback_response
-        })
-      end
-
-      fallback_response
-    else
-      response
+    if Keyword.has_key?(opts, :span_context) do
+      Telemetry.span_event([:rpc, :fallback], opts[:span_context], %{
+        response: fallback_response
+      })
     end
+
+    fallback_response
   end
 
   defp parse_split(payload) do
-    %Split{
+    %SplitView{
       name: Map.get(payload, "n", nil),
       traffic_type: payload["t"],
       killed: payload["k"],

@@ -5,7 +5,8 @@ defmodule Split.RPC.ResponseParserTest do
   alias Split.RPC.Fallback
   alias Split.RPC.ResponseParser
   alias Split.RPC.Message
-  alias Split.Treatment
+  alias Split.Impression
+  alias Split.SplitView
 
   import ExUnit.CaptureLog
 
@@ -24,14 +25,16 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               {:ok,
-                %Treatment{
-                  change_number: 123,
-                  config: nil,
-                  label: "test label",
-                  timestamp: 1_723_742_604,
-                  treatment: "on"
-                }}
+               %Impression{
+                 key: "user_key",
+                 bucketing_key: "bucketing_key",
+                 feature: "feature_name",
+                 change_number: 123,
+                 config: nil,
+                 label: "test label",
+                 timestamp: 1_723_742_604,
+                 treatment: "on"
+               }
     end
 
     test "parses get_treatment_with_config RPC response" do
@@ -52,14 +55,16 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               {:ok,
-                %Treatment{
-                  change_number: 123,
-                  config: "{\"foo\": \"bar\"}",
-                  label: "test label",
-                  timestamp: 1_723_742_604,
-                  treatment: "on"
-                }}
+               %Impression{
+                 key: "user_key",
+                 bucketing_key: "bucketing_key",
+                 feature: "feature_name",
+                 change_number: 123,
+                 config: "{\"foo\": \"bar\"}",
+                 label: "test label",
+                 timestamp: 1_723_742_604,
+                 treatment: "on"
+               }
     end
 
     test "parses get_treatments RPC response" do
@@ -81,23 +86,28 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               {:ok,
-                %{
-                  "feature_name1" => %Split.Treatment{
-                    treatment: "on",
-                    label: "test label 1",
-                    config: nil,
-                    change_number: 123,
-                    timestamp: 1_723_742_604
-                  },
-                  "feature_name2" => %Split.Treatment{
-                    treatment: "off",
-                    label: "test label 2",
-                    config: nil,
-                    change_number: 456,
-                    timestamp: 1_723_742_604
-                  }
-                }}
+               %{
+                 "feature_name1" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name1",
+                   treatment: "on",
+                   label: "test label 1",
+                   config: nil,
+                   change_number: 123,
+                   timestamp: 1_723_742_604
+                 },
+                 "feature_name2" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name2",
+                   treatment: "off",
+                   label: "test label 2",
+                   config: nil,
+                   change_number: 456,
+                   timestamp: 1_723_742_604
+                 }
+               }
     end
 
     test "parses get_treatments_with_config RPC response" do
@@ -127,23 +137,228 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               {:ok,
-                %{
-                  "feature_name1" => %Split.Treatment{
-                    treatment: "on",
-                    label: "test label 1",
-                    config: "{\"foo\": \"bar\"}",
-                    change_number: 123,
-                    timestamp: 1_723_742_604
-                  },
-                  "feature_name2" => %Split.Treatment{
-                    treatment: "off",
-                    label: "test label 2",
-                    config: "{\"baz\": \"qux\"}",
-                    change_number: 456,
-                    timestamp: 1_723_742_604
-                  }
-                }}
+               %{
+                 "feature_name1" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name1",
+                   treatment: "on",
+                   label: "test label 1",
+                   config: "{\"foo\": \"bar\"}",
+                   change_number: 123,
+                   timestamp: 1_723_742_604
+                 },
+                 "feature_name2" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name2",
+                   treatment: "off",
+                   label: "test label 2",
+                   config: "{\"baz\": \"qux\"}",
+                   change_number: 456,
+                   timestamp: 1_723_742_604
+                 }
+               }
+    end
+
+    test "parses get_treatments_by_flag_set RPC response" do
+      message = %Message{
+        o: @get_treatments_by_flag_set_opcode,
+        a: ["user_key", "bucketing_key", "flag_set_name"]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604}
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604}
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               %{
+                 "feature_name1" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name1",
+                   treatment: "on",
+                   label: "test label 1",
+                   config: nil,
+                   change_number: 123,
+                   timestamp: 1_723_742_604
+                 },
+                 "feature_name2" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name2",
+                   treatment: "off",
+                   label: "test label 2",
+                   config: nil,
+                   change_number: 456,
+                   timestamp: 1_723_742_604
+                 }
+               }
+    end
+
+    test "parses get_treatments_with_config_by_flag_set RPC response" do
+      message = %Message{
+        o: @get_treatments_with_config_by_flag_set_opcode,
+        a: ["user_key", "bucketing_key", "flag_set_name"]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604},
+                 "c" => "{\"foo\": \"bar\"}"
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604},
+                 "c" => "{\"baz\": \"qux\"}"
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               %{
+                 "feature_name1" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name1",
+                   treatment: "on",
+                   label: "test label 1",
+                   config: "{\"foo\": \"bar\"}",
+                   change_number: 123,
+                   timestamp: 1_723_742_604
+                 },
+                 "feature_name2" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name2",
+                   treatment: "off",
+                   label: "test label 2",
+                   config: "{\"baz\": \"qux\"}",
+                   change_number: 456,
+                   timestamp: 1_723_742_604
+                 }
+               }
+    end
+
+    test "parses get_treatments_by_flag_sets RPC response" do
+      message = %Message{
+        o: @get_treatments_by_flag_sets_opcode,
+        a: ["user_key", "bucketing_key", ["flag_set_name1", "flag_set_name2"]]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604}
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604}
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               %{
+                 "feature_name1" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name1",
+                   treatment: "on",
+                   label: "test label 1",
+                   config: nil,
+                   change_number: 123,
+                   timestamp: 1_723_742_604
+                 },
+                 "feature_name2" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name2",
+                   treatment: "off",
+                   label: "test label 2",
+                   config: nil,
+                   change_number: 456,
+                   timestamp: 1_723_742_604
+                 }
+               }
+    end
+
+    test "parses get_treatments_with_config_by_flag_sets RPC response" do
+      message = %Message{
+        o: @get_treatments_with_config_by_flag_sets_opcode,
+        a: ["user_key", "bucketing_key", ["flag_set_name1", "flag_set_name2"]]
+      }
+
+      response =
+        {:ok,
+         %{
+           "s" => 1,
+           "p" => %{
+             "r" => %{
+               "feature_name1" => %{
+                 "t" => "on",
+                 "l" => %{"l" => "test label 1", "c" => 123, "m" => 1_723_742_604},
+                 "c" => "{\"foo\": \"bar\"}"
+               },
+               "feature_name2" => %{
+                 "t" => "off",
+                 "l" => %{"l" => "test label 2", "c" => 456, "m" => 1_723_742_604},
+                 "c" => "{\"baz\": \"qux\"}"
+               }
+             }
+           }
+         }}
+
+      assert ResponseParser.parse_response(response, message) ==
+               %{
+                 "feature_name1" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name1",
+                   treatment: "on",
+                   label: "test label 1",
+                   config: "{\"foo\": \"bar\"}",
+                   change_number: 123,
+                   timestamp: 1_723_742_604
+                 },
+                 "feature_name2" => %Impression{
+                   key: "user_key",
+                   bucketing_key: "bucketing_key",
+                   feature: "feature_name2",
+                   treatment: "off",
+                   label: "test label 2",
+                   config: "{\"baz\": \"qux\"}",
+                   change_number: 456,
+                   timestamp: 1_723_742_604
+                 }
+               }
     end
 
     test "parses split RPC call" do
@@ -170,18 +385,17 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               {:ok,
-                %Split{
-                  name: "feature_name",
-                  traffic_type: "user",
-                  killed: false,
-                  treatments: ["treatment_a", "treatment_b", "treatment_c"],
-                  change_number: 1_499_375_079_065,
-                  configs: %{},
-                  default_treatment: "treatment_a",
-                  sets: [],
-                  impressions_disabled: false
-                }}
+               %SplitView{
+                 name: "feature_name",
+                 traffic_type: "user",
+                 killed: false,
+                 treatments: ["treatment_a", "treatment_b", "treatment_c"],
+                 change_number: 1_499_375_079_065,
+                 configs: %{},
+                 default_treatment: "treatment_a",
+                 sets: [],
+                 impressions_disabled: false
+               }
     end
 
     test "parses splits RPC call" do
@@ -225,32 +439,31 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       # Order of splits is not guaranteed
-      assert ResponseParser.parse_response(response, message) |> sorted_by(& &1.name) ==
-               {:ok,
-                [
-                  %Split{
-                    name: "feature_a",
-                    traffic_type: "user",
-                    killed: false,
-                    treatments: ["treatment_a", "treatment_b", "treatment_c"],
-                    change_number: 1_499_375_079_065,
-                    configs: %{},
-                    default_treatment: "treatment_a",
-                    sets: [],
-                    impressions_disabled: false
-                  },
-                  %Split{
-                    name: "feature_b",
-                    traffic_type: "user",
-                    killed: false,
-                    treatments: ["on", "off"],
-                    change_number: 1_499_375_079_066,
-                    configs: %{},
-                    default_treatment: "off",
-                    sets: [],
-                    impressions_disabled: false
-                  }
-                ]}
+      assert ResponseParser.parse_response(response, message) |> Enum.sort_by(& &1.name) ==
+               [
+                 %SplitView{
+                   name: "feature_a",
+                   traffic_type: "user",
+                   killed: false,
+                   treatments: ["treatment_a", "treatment_b", "treatment_c"],
+                   change_number: 1_499_375_079_065,
+                   configs: %{},
+                   default_treatment: "treatment_a",
+                   sets: [],
+                   impressions_disabled: false
+                 },
+                 %SplitView{
+                   name: "feature_b",
+                   traffic_type: "user",
+                   killed: false,
+                   treatments: ["on", "off"],
+                   change_number: 1_499_375_079_066,
+                   configs: %{},
+                   default_treatment: "off",
+                   sets: [],
+                   impressions_disabled: false
+                 }
+               ]
     end
 
     test "parses split_names RPC call" do
@@ -269,7 +482,7 @@ defmodule Split.RPC.ResponseParserTest do
          }}
 
       assert ResponseParser.parse_response(response, message) ==
-               {:ok, ["feature_a", "feature_b"]}
+               ["feature_a", "feature_b"]
     end
 
     test "parses successful track RPC call" do
@@ -277,7 +490,7 @@ defmodule Split.RPC.ResponseParserTest do
 
       response = {:ok, %{"s" => 1, "p" => %{"s" => true}}}
 
-      assert ResponseParser.parse_response(response, message) == :ok
+      assert ResponseParser.parse_response(response, message) == true
     end
 
     test "parses failed track RPC call" do
@@ -285,59 +498,53 @@ defmodule Split.RPC.ResponseParserTest do
 
       response = {:ok, %{"s" => 1, "p" => %{"s" => false}}}
 
-      assert ResponseParser.parse_response(response, message) == :error
+      assert ResponseParser.parse_response(response, message) == false
     end
 
-    test "handles splitd internal error" do
-      message = %Message{
-        o: @get_treatments_with_config_opcode,
-        a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"]]
-      }
+    # test "handles splitd internal error" do
+    #   message = %Message{
+    #     o: @get_treatments_with_config_opcode,
+    #     a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"]]
+    #   }
 
-      response = {:ok, %{"s" => 0x10, "p" => %{"m" => "Some bad error"}}}
+    #   response = {:ok, %{"s" => 0x10, "p" => %{"m" => "Some bad error"}}}
 
-      assert capture_log(fn ->
-               assert ResponseParser.parse_response(response, message) ==
-                        {:error, :splitd_internal_error}
-             end) =~ "Error response received from Splitd"
-    end
+    #   assert capture_log(fn ->
+    #            assert ResponseParser.parse_response(response, message) ==
+    #                     {:error, :splitd_internal_error}
+    #          end) =~ "Error response received from Splitd"
+    # end
 
-    test "handles unknow/unparsable payload" do
-      message = %Message{
-        o: @get_treatments_with_config_opcode,
-        a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"]]
-      }
+    # test "handles unknow/unparsable payload" do
+    #   message = %Message{
+    #     o: @get_treatments_with_config_opcode,
+    #     a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"]]
+    #   }
 
-      response = {:ok, "some bad payload"}
+    #   response = {:ok, "some bad payload"}
 
-      assert capture_log(fn ->
-               assert ResponseParser.parse_response(response, message) ==
-                        {:error, :splitd_parse_error}
-             end) =~ "Unable to parse Splitd response"
-    end
+    #   assert capture_log(fn ->
+    #            assert ResponseParser.parse_response(response, message) ==
+    #                     {:error, :splitd_parse_error}
+    #          end) =~ "Unable to parse Splitd response"
+    # end
 
-    test "handles socket errors" do
-      message = %Message{
-        o: @get_treatments_with_config_opcode,
-        a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"]]
-      }
+    # test "handles socket errors" do
+    #   message = %Message{
+    #     o: @get_treatments_with_config_opcode,
+    #     a: ["user_key", "bucketing_key", ["feature_name1", "feature_name2"]]
+    #   }
 
-      response = {:error, :enoent}
+    #   response = {:error, :enoent}
 
-      assert capture_log(fn ->
-               assert ResponseParser.parse_response(response, message) ==
-                        {:error, :enoent}
-             end) =~ "Error while communicating with Splitd"
-    end
+    #   assert capture_log(fn ->
+    #            assert ResponseParser.parse_response(response, message) ==
+    #                     {:error, :enoent}
+    #          end) =~ "Error while communicating with Splitd"
+    # end
   end
 
-  describe "parse_response/2 with fallback enabled" do
-    setup do
-      old_value = :persistent_term.get(:splitd_fallback_enabled, false)
-      :persistent_term.put(:splitd_fallback_enabled, true)
-      on_exit(fn -> :persistent_term.put(:splitd_fallback_enabled, old_value) end)
-    end
-
+  describe "parse_response/2 with fallback" do
     test "returns fallback for the sent message on invalid splitd response" do
       message = %Message{o: @split_opcode, a: []}
 
@@ -345,7 +552,7 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert capture_log(fn ->
                assert ResponseParser.parse_response(response, message) ==
-                        {:ok, nil}
+                        nil
              end) =~ "Unable to parse Splitd response"
     end
 
@@ -359,14 +566,13 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert capture_log(fn ->
                assert ResponseParser.parse_response(response, message) ==
-                        {:ok,
-                         %Split.Treatment{
-                           change_number: nil,
-                           config: nil,
-                           label: "fallback treatment",
-                           timestamp: nil,
-                           treatment: "control"
-                         }}
+                        %Impression{
+                          change_number: nil,
+                          config: nil,
+                          label: "exception",
+                          timestamp: nil,
+                          treatment: "control"
+                        }
              end) =~ "Error response received from Splitd"
     end
 
@@ -380,16 +586,15 @@ defmodule Split.RPC.ResponseParserTest do
 
       assert capture_log(fn ->
                assert ResponseParser.parse_response(response, message) ==
-                        {:ok,
-                         %{
-                           "feature_name1" => %Split.Treatment{
-                             treatment: "control",
-                             label: "fallback treatment",
-                             config: nil,
-                             change_number: nil,
-                             timestamp: nil
-                           }
-                         }}
+                        %{
+                          "feature_name1" => %Impression{
+                            treatment: "control",
+                            label: "exception",
+                            config: nil,
+                            change_number: nil,
+                            timestamp: nil
+                          }
+                        }
              end) =~ "Error while communicating with Splitd"
     end
 
@@ -420,12 +625,5 @@ defmodule Split.RPC.ResponseParserTest do
                          response: ^expected_fallback
                        }}
     end
-  end
-
-  defp sorted_by(response, fun) do
-    response
-    |> elem(1)
-    |> Enum.sort_by(fun)
-    |> then(&{:ok, &1})
   end
 end
