@@ -10,27 +10,23 @@ defmodule Split do
   The most basic approach is to add `Split` as a child of your application's
   top-most supervisor, i.e. `lib/my_app/application.ex`.
 
-  ```elixir
-  defmodule MyApp.Application do
-    use Application
+      defmodule MyApp.Application do
+        use Application
 
-    def start(_type, _args) do
-      children = [
-        # ... other children ...
-        {Split, [socket_path: "/var/run/split.sock"]}
-      ]
+        def start(_type, _args) do
+          children = [
+            # ... other children ...
+            {Split, [socket_path: "/var/run/split.sock"]}
+          ]
 
-      opts = [strategy: :one_for_one, name: MyApp.Supervisor]
-      Supervisor.start_link(children, opts)
-    end
-  end
-  ```
+          opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+          Supervisor.start_link(children, opts)
+        end
+      end
 
   You can also start `Split` dynamically by calling `Split.Supervisor.start_link/1`:
 
-  ```elixir
-  Split.Supervisor.start_link(opts)
-  ```
+      Split.Supervisor.start_link(opts)
 
   ### Options
 
@@ -45,9 +41,7 @@ defmodule Split do
 
   Once you have started Split, you are ready to start interacting with the Split.io splitd's daemon to access feature flags and configurations.
 
-  ```elixir
-  Split.get_treatment("user_key", "feature_name")
-  ```
+      Split.get_treatment("user_key", "feature_name")
   """
   alias Split.Telemetry
   alias Split.Sockets.Pool
@@ -56,15 +50,33 @@ defmodule Split do
   alias Split.RPC.Message
   alias Split.RPC.ResponseParser
 
-  @typedoc "An option that can be provided when starting `Split`."
+  @typedoc "An option that can be provided when starting `Split`. See [options](#module-options) for more information."
   @type option ::
           {:socket_path, String.t()}
           | {:pool_size, non_neg_integer()}
           | {:connect_timeout, non_neg_integer()}
 
+  @typedoc "Options to start the `Split` application."
   @type options :: [option()]
 
-  @type split_key :: String.t() | {:matching_key, String.t(), :bucketing_key, String.t() | nil}
+  @typedoc """
+  The [traffic type identifier](https://help.split.io/hc/en-us/articles/360019916311-Traffic-types).
+  It can be either a string or a map with a matching key and an optional bucketing key.
+  """
+  @type split_key ::
+          String.t()
+          | %{required(:matchingKey) => String.t(), optional(:bucketingKey) => String.t() | nil}
+
+  @typedoc "A map of attributes to use when evaluating feature flags."
+  @type attributes :: %{
+          optional(atom() | String.t()) =>
+            String.t() | integer() | boolean() | [String.t() | integer()] | nil
+        }
+
+  @typedoc "A map of properties to use when tracking an event."
+  @type properties :: %{
+          optional(atom() | String.t()) => String.t() | integer() | boolean() | nil
+        }
 
   @doc """
   Builds a child specification to use in a Supervisor.
@@ -76,7 +88,17 @@ defmodule Split do
   @spec child_spec(options()) :: Supervisor.child_spec()
   defdelegate child_spec(options), to: Split.Supervisor
 
-  @spec get_treatment(split_key(), String.t(), map() | nil) :: String.t()
+  @doc """
+  Gets the treatment string for a given key, feature flag name and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatment("user_id", "located_in_usa")
+      "off"
+      iex> Split.get_treatment("user_id", "located_in_usa", %{country: "USA"})
+      "on"
+  """
+  @spec get_treatment(split_key(), String.t(), attributes() | nil) :: String.t()
   def get_treatment(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment(
@@ -88,7 +110,18 @@ defmodule Split do
     execute_rpc(request) |> impression_to_treatment()
   end
 
-  @spec get_treatment_with_config(split_key(), String.t(), map() | nil) :: TreatmentWithConfig.t()
+  @doc """
+  Gets the treatment with config for a given key, feature flag name and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatment_with_config("user_id", "located_in_usa")
+      %Split.TreatmentWithConfig{treatment: "off", config: nil}
+      iex> Split.get_treatment("user_id", "located_in_usa", %{country: "USA"})
+      %Split.TreatmentWithConfig{treatment: "on", config: nil}
+  """
+  @spec get_treatment_with_config(split_key(), String.t(), attributes() | nil) ::
+          TreatmentWithConfig.t()
   def get_treatment_with_config(key, feature_name, attributes \\ %{}) do
     request =
       Message.get_treatment_with_config(
@@ -100,7 +133,17 @@ defmodule Split do
     execute_rpc(request) |> impression_to_treatment_with_config()
   end
 
-  @spec get_treatments(split_key(), [String.t()], map() | nil) :: %{
+  @doc """
+  Gets a map of feature flag names to treatments for a given key, list of feature flag names and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatments("user_id", ["located_in_usa"])
+      %{"located_in_usa" => "off"}
+      iex> Split.get_treatments("user_id", ["located_in_usa"], %{country: "USA"})
+      %{"located_in_usa" => "on"}
+  """
+  @spec get_treatments(split_key(), [String.t()], attributes() | nil) :: %{
           String.t() => String.t()
         }
   def get_treatments(key, feature_names, attributes \\ %{}) do
@@ -114,7 +157,17 @@ defmodule Split do
     execute_rpc(request) |> impressions_to_treatments()
   end
 
-  @spec get_treatments_with_config(split_key(), [String.t()], map() | nil) :: %{
+  @doc """
+  Gets a map of feature flag names to treatments with config for a given key, list of feature flag names and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatments_with_config("user_id", ["located_in_usa"])
+      %{"located_in_usa" => %Split.TreatmentWithConfig{treatment: "off", config: nil}}
+      iex> Split.get_treatments_with_config("user_id", ["located_in_usa"], %{country: "USA"})
+      %{"located_in_usa" => %Split.TreatmentWithConfig{treatment: "on", config: nil}}
+  """
+  @spec get_treatments_with_config(split_key(), [String.t()], attributes() | nil) :: %{
           String.t() => TreatmentWithConfig.t()
         }
   def get_treatments_with_config(key, feature_names, attributes \\ %{}) do
@@ -128,7 +181,17 @@ defmodule Split do
     execute_rpc(request) |> impressions_to_treatments_with_config()
   end
 
-  @spec get_treatments_by_flag_set(split_key(), String.t(), map() | nil) :: %{
+  @doc """
+  Gets a map of feature flag names to treatment strings for a given key, flag set name and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatments_by_flag_set("user_id", "frontend_flags")
+      %{"located_in_usa" => "off"}
+      iex> Split.get_treatments_by_flag_set("user_id", "frontend_flags", %{country: "USA"})
+      %{"located_in_usa" => "on"}
+  """
+  @spec get_treatments_by_flag_set(split_key(), String.t(), attributes() | nil) :: %{
           String.t() => String.t()
         }
   def get_treatments_by_flag_set(key, flag_set_name, attributes \\ %{}) do
@@ -142,10 +205,20 @@ defmodule Split do
     execute_rpc(request) |> impressions_to_treatments()
   end
 
+  @doc """
+  Gets a map of feature flag names to treatments with config for a given key, flag set name and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatments_with_config_by_flag_set("user_id", "frontend_flags")
+      %{"located_in_usa" => %Split.TreatmentWithConfig{treatment: "off", config: nil}}
+      iex> Split.get_treatments_with_config_by_flag_set("user_id", "frontend_flags", %{country: "USA"})
+      %{"located_in_usa" => %Split.TreatmentWithConfig{treatment: "on", config: nil}}
+  """
   @spec get_treatments_with_config_by_flag_set(
           split_key(),
           String.t(),
-          map() | nil
+          attributes() | nil
         ) ::
           %{String.t() => TreatmentWithConfig.t()}
   def get_treatments_with_config_by_flag_set(
@@ -163,7 +236,17 @@ defmodule Split do
     execute_rpc(request) |> impressions_to_treatments_with_config()
   end
 
-  @spec get_treatments_by_flag_sets(split_key(), [String.t()], map() | nil) ::
+  @doc """
+  Gets a map of feature flag names to treatment strings for a given key, flag set name and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatments_by_flag_sets("user_id", ["frontend_flags", "backend_flags"])
+      %{"located_in_usa" => "off"}
+      iex> Split.get_treatments_by_flag_sets("user_id", ["frontend_flags", "backend_flags"], %{country: "USA"})
+      %{"located_in_usa" => "on"}
+  """
+  @spec get_treatments_by_flag_sets(split_key(), [String.t()], attributes() | nil) ::
           %{String.t() => String.t()}
   def get_treatments_by_flag_sets(
         key,
@@ -180,10 +263,20 @@ defmodule Split do
     execute_rpc(request) |> impressions_to_treatments()
   end
 
+  @doc """
+  Gets a map of feature flag names to treatments with config for a given key, flag set name and optional attributes.
+
+  ## Examples
+
+      iex> Split.get_treatments_with_config_by_flag_sets("user_id", ["frontend_flags", "backend_flags"])
+      %{"located_in_usa" => %Split.TreatmentWithConfig{treatment: "off", config: nil}}
+      iex> Split.get_treatments_with_config_by_flag_sets("user_id", ["frontend_flags", "backend_flags"], %{country: "USA"})
+      %{"located_in_usa" => %Split.TreatmentWithConfig{treatment: "on", config: nil}}
+  """
   @spec get_treatments_with_config_by_flag_sets(
           split_key(),
           [String.t()],
-          map() | nil
+          attributes() | nil
         ) ::
           %{String.t() => TreatmentWithConfig.t()}
   def get_treatments_with_config_by_flag_sets(
@@ -201,18 +294,60 @@ defmodule Split do
     execute_rpc(request) |> impressions_to_treatments_with_config()
   end
 
-  @spec track(split_key(), String.t(), String.t(), number() | nil, map() | nil) :: boolean()
+  @doc """
+  Tracks an event for a given key, traffic type, event type, and optional numeric value and map of properties.
+  Returns `true` if the event was successfully tracked, or `false` otherwise, e.g. if the Split daemon is not running or cannot be reached.
+
+  See: https://help.split.io/hc/en-us/articles/26988707417869-Elixir-Thin-Client-SDK#track
+
+  ## Examples
+
+      iex> Split.track("user_id", "user", "my-event")
+      true
+      iex> Split.track("user_id", "user", "my-event", 42)
+      true
+      iex> Split.track("user_id", "user", "my-event", 42, %{property1: "value1"})
+      true
+  """
+  @spec track(split_key(), String.t(), String.t(), number() | nil, properties() | nil) ::
+          boolean()
   def track(key, traffic_type, event_type, value \\ nil, properties \\ %{}) do
     request = Message.track(key, traffic_type, event_type, value, properties)
     execute_rpc(request)
   end
 
+  @doc """
+  Gets the list of all feature flag names.
+
+  ## Examples
+
+      iex> Split.split_names()
+      ["located_in_usa"]
+  """
   @spec split_names() :: [String.t()]
   def split_names do
     request = Message.split_names()
     execute_rpc(request)
   end
 
+  @doc """
+  Gets the data of a given feature flag name in `SplitView` format.
+
+  ## Examples
+
+      iex> Split.split("located_in_usa")
+      %Split.SplitView{
+        name: "located_in_usa",
+        traffic_type: "user",
+        killed: false,
+        treatments: ["on", "off"],
+        change_number: 123456,
+        configs: %{ "on" => nil, "off" => nil },
+        default_treatment: "off",
+        sets: ["frontend_flags"],
+        impressions_disabled: false
+      }
+  """
   @spec split(String.t()) :: SplitView.t() | nil
   def split(name) do
     request = Message.split(name)
@@ -220,6 +355,24 @@ defmodule Split do
     execute_rpc(request)
   end
 
+  @doc """
+  Gets the data of all feature flags in `SplitView` format.
+
+  ## Examples
+
+      iex> Split.splits()
+      [%Split.SplitView{
+        name: "located_in_usa",
+        traffic_type: "user",
+        killed: false,
+        treatments: ["on", "off"],
+        change_number: 123456,
+        configs: %{ "on" => nil, "off" => nil },
+        default_treatment: "off",
+        sets: ["frontend_flags"],
+        impressions_disabled: false
+      }]
+  """
   @spec splits() :: [SplitView.t()]
   def splits do
     request = Message.splits()

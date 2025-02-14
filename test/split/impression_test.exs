@@ -16,9 +16,9 @@ defmodule Split.ImpressionTest do
       }
 
       expected = %Impression{
-        key: 'user_key',
-        bucketing_key: 'bucketing_key',
-        feature: 'feature_name',
+        key: "user_key",
+        bucketing_key: "bucketing_key",
+        feature: "feature_name",
         treatment: "treatment",
         label: "label",
         config: "{\"field\": \"value\"}",
@@ -26,7 +26,13 @@ defmodule Split.ImpressionTest do
         timestamp: 2
       }
 
-      assert expected == Impression.build_from_daemon_response(treatment_payload, 'user_key', 'bucketing_key', 'feature_name')
+      assert expected ==
+               Impression.build_from_daemon_response(
+                 treatment_payload,
+                 "user_key",
+                 "bucketing_key",
+                 "feature_name"
+               )
     end
 
     test "builds an impression struct with nil values" do
@@ -35,9 +41,9 @@ defmodule Split.ImpressionTest do
       }
 
       expected = %Impression{
-        key: 'user_key',
+        key: "user_key",
         bucketing_key: nil,
-        feature: 'feature_name',
+        feature: "feature_name",
         treatment: "treatment",
         label: nil,
         config: nil,
@@ -45,7 +51,13 @@ defmodule Split.ImpressionTest do
         timestamp: nil
       }
 
-      assert expected == Impression.build_from_daemon_response(treatment_payload, 'user_key', nil, 'feature_name')
+      assert expected ==
+               Impression.build_from_daemon_response(
+                 treatment_payload,
+                 "user_key",
+                 nil,
+                 "feature_name"
+               )
     end
   end
 end
