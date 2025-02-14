@@ -32,7 +32,7 @@ defmodule Split do
 
   `Split` takes a number of keyword arguments as options when starting. The following options are available:
 
-  - `:socket_path`: **OPTIONAL** The path to the splitd socket file. Default is `/var/run/splitd.sock`.
+  - `:socket_path`: **OPTIONAL** The path to the splitd socket file. Default is `"/var/run/splitd.sock"`.
   - `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
   - `:connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
 
