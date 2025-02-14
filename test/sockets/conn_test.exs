@@ -87,7 +87,7 @@ defmodule Split.Sockets.ConnTest do
 
       {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
 
-      message = Message.get_treatment(user_key: "user-id", feature_name: "feature")
+      message = Message.get_treatment(key: "user-id", feature_name: "feature")
 
       {:ok, _conn, response} = Conn.send_message(conn, message)
 
@@ -108,7 +108,7 @@ defmodule Split.Sockets.ConnTest do
 
       {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
 
-      message = Message.get_treatment(user_key: "user-id", feature_name: "feature")
+      message = Message.get_treatment(key: "user-id", feature_name: "feature")
 
       # Stop the mocked splitd socket to receive connection errors
       :ok = stop_supervised(splitd_name)
@@ -129,7 +129,7 @@ defmodule Split.Sockets.ConnTest do
 
       {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
 
-      message = Message.get_treatment(user_key: "user-id", feature_name: "feature")
+      message = Message.get_treatment(key: "user-id", feature_name: "feature")
 
       assert {:ok, _conn, response} = Conn.send_message(conn, message)
 

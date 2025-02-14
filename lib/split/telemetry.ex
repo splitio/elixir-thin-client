@@ -184,7 +184,7 @@ defmodule Split.Telemetry do
       * `change_number` - The change number of the treatment.
       * `timestamp` - The timestamp of the treatment assignment.
   """
-  alias Split.Treatment
+  alias Split.Impression
 
   defstruct span_name: nil, telemetry_span_context: nil, start_time: nil, start_metadata: nil
 
@@ -300,17 +300,10 @@ defmodule Split.Telemetry do
   @doc """
   Emits a telemetry `impression` event when a Split treatment has been evaluated.
   """
-  @spec send_impression(String.t(), String.t(), Treatment.t()) :: :ok
-  def send_impression(user_key, feature_name, %Treatment{} = treatment) do
+  @spec send_impression(Impression.t()) :: :ok
+  def send_impression(%Impression{} = impression) do
     :telemetry.execute([@app_name, :impression], %{}, %{
-      impression: %Split.Impression{
-        key: user_key,
-        feature: feature_name,
-        treatment: treatment.treatment,
-        label: treatment.label,
-        change_number: treatment.change_number,
-        timestamp: treatment.timestamp
-      }
+      impression: impression
     })
   end
 

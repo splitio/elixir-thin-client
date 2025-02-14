@@ -8,7 +8,7 @@ defmodule Split.Sockets.PoolTest do
   import ExUnit.CaptureLog
 
   setup_all context do
-    test_id = :erlang.phash2(context.case)
+    test_id = :erlang.phash2(context.module)
     socket_path = "/tmp/test-splitd-#{test_id}.sock"
 
     start_supervised!(

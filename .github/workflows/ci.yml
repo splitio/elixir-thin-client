@@ -3,17 +3,18 @@ on: push
 jobs:
   test:
     runs-on: ubuntu-20.04
-    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    name: OTP ${{matrix.versions.otp}} / Elixir ${{matrix.versions.elixir}}
     strategy:
       matrix:
-        otp: ['26.2.5']
-        elixir: ['1.17.0']
+        # Minimum and maximum supported versions
+        versions: [{ elixir: '1.14.0', otp: '25' }, { elixir: '1.18.0', otp: '26.2.5' }]
     steps:
       - uses: actions/checkout@v4
       - uses: erlef/setup-beam@v1
         with:
-          otp-version: ${{matrix.otp}}
-          elixir-version: ${{matrix.elixir}}
+          otp-version: ${{matrix.versions.otp}}
+          elixir-version: ${{matrix.versions.elixir}}
+      - run: mix deps.unlock --all # compiles and runs tests against latest versions of dependencies
       - run: mix deps.get
       - run: mix test
       - run: mix dialyzer --format github
