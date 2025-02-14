@@ -16,11 +16,7 @@ defmodule Split.Sockets.Pool do
     }
   end
 
-  def start_link(opts) when is_map(opts) do
-    start_link(Map.to_list(opts))
-  end
-
-  def start_link(opts) when is_list(opts) do
+  def start_link(opts) do
     socket_path = Keyword.get(opts, :socket_path, "/var/run/splitd.sock")
     pool_name = Keyword.get(opts, :pool_name, __MODULE__)
     pool_size = Keyword.get(opts, :pool_size, System.schedulers_online())
