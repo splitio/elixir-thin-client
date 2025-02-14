@@ -1,5 +1,6 @@
 0.2.0 (February 14, 2025):
  - Added new variations of the get treatment functions to support evaluating flags in given flag set/s: `Split.get_treatments_by_flag_set/3`, `Split.get_treatments_by_flag_sets/3`, `Split.get_treatments_with_config_by_flag_set/3`, and `Split.get_treatments_with_config_by_flag_sets/3`.
+ - Updated the `:socket_path` option for `Split.Supervisor.start_link/1` to be optional, defaulting to `"/var/run/splitd.sock"`.
  - BREAKING CHANGES:
     - Removed the `fallback_enabled` option from `Split.Supervisor.start_link/1`. Fallback behavior is now always enabled, so `Split` functions no longer return `{:error, _}` tuples but instead use the fallback value when an error occurs.
     - Renamed the `Split.Treatment` struct to `Split.TreatmentWithConfig` and removed the `label`, `change_number`, and `timestamp` fields.
