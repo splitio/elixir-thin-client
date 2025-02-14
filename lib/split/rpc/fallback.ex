@@ -7,7 +7,7 @@ defmodule Split.RPC.Fallback do
   use Split.RPC.Opcodes
 
   alias Split.RPC.Message
-  alias Split.Treatment
+  alias Split.Impression
 
   @doc """
   Provides a default value for the given RPC message.
@@ -15,22 +15,22 @@ defmodule Split.RPC.Fallback do
   ## Examples
 
       iex> Fallback.fallback(%Message{o: 0x11})
-      %Treatment{treatment: "control", label: "exception"}
+      %Impression{treatment: "control", label: "exception"}
 
       iex> Fallback.fallback(%Message{o: 0x13})
-      %Treatment{treatment: "control", label: "exception", config: nil}
+      %Impression{treatment: "control", label: "exception", config: nil}
 
       iex> Fallback.fallback(%Message{
       ...>   o: 0x12,
       ...>   a: ["user_key", "bucketing_key", ["feature_1", "feature_2"], %{}]
       ...> })
       %{
-        "feature_1" => %Treatment{treatment: "control", label: "exception"},
-        "feature_2" => %Treatment{treatment: "control", label: "exception"}
+        "feature_1" => %Impression{treatment: "control", label: "exception"},
+        "feature_2" => %Impression{treatment: "control", label: "exception"}
       }
 
       iex> Fallback.fallback(%Message{o: 0x14, a: ["user_key", "bucketing_key", ["feature_a"], %{}]})
-      %{"feature_a" => %Treatment{treatment: "control", label: "exception", config: nil}}
+      %{"feature_a" => %Impression{treatment: "control", label: "exception", config: nil}}
 
       iex> Fallback.fallback(%Message{o: 0xA1})
       nil
@@ -44,10 +44,10 @@ defmodule Split.RPC.Fallback do
       iex> Fallback.fallback(%Message{o: 0x80})
       false
   """
-  @spec fallback(Message.t()) :: map() | Treatment.t() | list() | boolean() | nil
+  @spec fallback(Message.t()) :: map() | Impression.t() | list() | boolean() | nil
   def fallback(%Message{o: opcode})
       when opcode in [@get_treatment_opcode, @get_treatment_with_config_opcode] do
-    %Treatment{label: "exception"}
+    %Impression{label: "exception"}
   end
 
   def fallback(%Message{o: opcode, a: args})
@@ -56,7 +56,7 @@ defmodule Split.RPC.Fallback do
 
     treatments =
       Enum.reduce(feature_names, %{}, fn feature_name, acc ->
-        Map.put(acc, feature_name, %Treatment{label: "exception"})
+        Map.put(acc, feature_name, %Impression{label: "exception"})
       end)
 
     treatments
@@ -69,8 +69,8 @@ defmodule Split.RPC.Fallback do
              @get_treatments_by_flag_sets_opcode,
              @get_treatments_with_config_by_flag_sets_opcode
            ] do
-
-    %{} # Empty map since we don't have a way to know the feature names
+    # Empty map since we don't have a way to know the feature names
+    %{}
   end
 
   def fallback(%Message{o: @split_opcode}) do

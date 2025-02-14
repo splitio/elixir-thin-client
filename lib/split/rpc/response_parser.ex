@@ -8,7 +8,7 @@ defmodule Split.RPC.ResponseParser do
   alias Split.RPC.Fallback
   alias Split.RPC.Message
   alias Split.Telemetry
-  alias Split.Treatment
+  alias Split.Impression
   alias Split.SplitView
 
   @type splitd_response :: {:ok, map()} | {:error, term()}
@@ -18,7 +18,7 @@ defmodule Split.RPC.ResponseParser do
   """
   @spec parse_response(response :: splitd_response(), request :: Message.t(), [
           {:span_context, reference()} | {:span_context, nil}
-        ]) :: map() | list() | Treatment.t() | SplitView.t() | boolean() | nil
+        ]) :: map() | list() | Impression.t() | SplitView.t() | boolean() | nil
 
   def parse_response(response, original_request, opts \\ [])
 
@@ -31,12 +31,15 @@ defmodule Split.RPC.ResponseParser do
         _opts
       )
       when opcode in [@get_treatment_opcode, @get_treatment_with_config_opcode] do
-    treatment = Treatment.build_from_daemon_response(treatment_data)
     key = Enum.at(args, 0)
+    bucketing_key = Enum.at(args, 1)
     feature_name = Enum.at(args, 2)
 
-    Telemetry.send_impression(key, feature_name, treatment)
-    treatment
+    impression =
+      Impression.build_from_daemon_response(treatment_data, key, bucketing_key, feature_name)
+
+    Telemetry.send_impression(impression)
+    impression
   end
 
   def parse_response(
@@ -48,17 +51,20 @@ defmodule Split.RPC.ResponseParser do
         _opts
       )
       when opcode in [@get_treatments_opcode, @get_treatments_with_config_opcode] do
-    treatments = Enum.map(treatments, &Treatment.build_from_daemon_response/1)
     key = Enum.at(args, 0)
+    bucketing_key = Enum.at(args, 1)
     feature_names = Enum.at(args, 2)
 
-    mapped_treatments =
+    impressions =
       Enum.zip_reduce(feature_names, treatments, %{}, fn feature_name, treatment, acc ->
-        Telemetry.send_impression(key, feature_name, treatment)
-        Map.put(acc, feature_name, treatment)
+        impression =
+          Impression.build_from_daemon_response(treatment, key, bucketing_key, feature_name)
+
+        Telemetry.send_impression(impression)
+        Map.put(acc, feature_name, impression)
       end)
 
-    mapped_treatments
+    impressions
   end
 
   def parse_response(
@@ -75,18 +81,21 @@ defmodule Split.RPC.ResponseParser do
              @get_treatments_by_flag_sets_opcode,
              @get_treatments_with_config_by_flag_sets_opcode
            ] do
-    user_key = Enum.at(args, 0)
+    key = Enum.at(args, 0)
+    bucketing_key = Enum.at(args, 1)
 
-    mapped_treatments =
+    impressions =
       treatments
       |> Enum.map(fn {feature_name, treatment} ->
-        processed_treatment = Treatment.build_from_daemon_response(treatment)
-        Telemetry.send_impression(user_key, feature_name, processed_treatment)
-        {feature_name, processed_treatment}
+        impression =
+          Impression.build_from_daemon_response(treatment, key, bucketing_key, feature_name)
+
+        Telemetry.send_impression(impression)
+        {feature_name, impression}
       end)
       |> Map.new()
 
-    mapped_treatments
+    impressions
   end
 
   def parse_response(

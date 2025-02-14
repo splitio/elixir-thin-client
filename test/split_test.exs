@@ -2,7 +2,7 @@ defmodule SplitThinElixirTest do
   use ExUnit.Case
 
   alias Split.Impression
-  alias Split.Treatment
+  alias Split.TreatmentWithConfig
   alias Split.SplitView
 
   setup_all context do
@@ -43,7 +43,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatment_with_config/3" do
     test "returns expected struct" do
-      assert %Treatment{treatment: "on", config: %{"foo" => "bar"}} =
+      assert %TreatmentWithConfig{treatment: "on", config: %{"foo" => "bar"}} =
                Split.get_treatment_with_config(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  "ethan_test"
@@ -81,7 +81,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_with_config/3" do
     test "returns expected struct" do
-      assert %{"ethan_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}} =
+      assert %{"ethan_test" => %TreatmentWithConfig{treatment: "on", config: %{"foo" => "bar"}}} =
                Split.get_treatments_with_config(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  [
@@ -124,7 +124,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_with_config_by_flag_set/3" do
     test "returns expected struct" do
-      assert %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}} =
+      assert %{"emi_test" => %TreatmentWithConfig{treatment: "on", config: %{"foo" => "bar"}}} =
                Split.get_treatments_with_config_by_flag_set(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  "flag_set_name"
@@ -167,7 +167,7 @@ defmodule SplitThinElixirTest do
 
   describe "get_treatments_with_config_by_flag_sets/3" do
     test "returns expected struct" do
-      assert %{"emi_test" => %Treatment{treatment: "on", config: %{"foo" => "bar"}}} =
+      assert %{"emi_test" => %TreatmentWithConfig{treatment: "on", config: %{"foo" => "bar"}}} =
                Split.get_treatments_with_config_by_flag_sets(
                  "user-id-" <> to_string(Enum.random(1..100_000)),
                  [

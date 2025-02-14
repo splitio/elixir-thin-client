@@ -2,6 +2,7 @@
  - Added new variations of the get treatment functions to support evaluating flags in given flag set/s: `Split.get_treatments_by_flag_set/3`, `Split.get_treatments_by_flag_sets/3`, `Split.get_treatments_with_config_by_flag_set/3`, and `Split.get_treatments_with_config_by_flag_sets/3`.
  - BREAKING CHANGES:
     - Removed the `fallback_enabled` option from `Split.Supervisor.start_link/1`. Fallback behavior is now always enabled, so `Split` functions no longer return `{:error, _}` tuples but instead use the fallback value when an error occurs.
+    - Renamed the `Split.Treatment` struct to `Split.TreatmentWithConfig` and removed the `label`, `change_number`, and `timestamp` fields.
     - Moved the `Split` struct to the new `Split.SplitView` module and updated some fields: renamed `configurations` to `configs`, `flag_sets` to `sets`, and added the `impressions_disabled` field.
     - Updated the return types of `Split.get_treatment/3` and `Split.get_treatments/3` to return a treatment string and a map of treatment strings, respectively.
     - Updated all `get_treatment` function signatures: removed the third argument (`bucketing_key`) and expanded the first argument (`key`) to accept a union, allowing either a string or a map with a key and optional bucketing key (`{:matching_key, String.t(), :bucketing_key, String.t() | nil}`).
