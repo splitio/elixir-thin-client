@@ -5,7 +5,7 @@
 version = Regex.run(~r/version: "([^"]+)"/, mix_content)
 |> Enum.at(1)
 
-# Read message.ex client_id
+# Read message.ex @client_id
 {:ok, message_content} = File.read("lib/split/rpc/message.ex")
 client_id_version = Regex.run(~r/@client_id "Splitd_Elixir-([^"]+)"/, message_content)
 |> Enum.at(1)
