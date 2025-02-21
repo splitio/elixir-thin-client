@@ -5,7 +5,7 @@ defmodule Split.RPC.Message do
   use Split.RPC.Opcodes
 
   @protocol_version 0x01
-  @client_id "Splitd_Elixir-0.2.0"
+  @client_id "Splitd_Elixir-0.2.1-rc.0"
 
   @type opcode :: unquote(Enum.reduce(@opcodes, &{:|, [], [&1, &2]}))
   @type protocol_version :: unquote(@protocol_version)
@@ -37,7 +37,7 @@ defmodule Split.RPC.Message do
   ## Examples
 
       iex> Message.register()
-      %Message{v: 1, o: 0, a: ["123", "Splitd_Elixir-0.2.0", 1]}
+      %Message{v: 1, o: 0, a: ["123", "Splitd_Elixir-0.2.1-rc.0", 1]}
   """
   @spec register() :: t()
   def register, do: %__MODULE__{o: @register_opcode, a: ["123", @client_id, 1]}
