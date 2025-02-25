@@ -1,6 +1,6 @@
 # Split SDK for Elixir
 
-[![hex.pm version](https://img.shields.io/hexpm/v/split_thin_sdk)](https://img.shields.io/hexpm/v/split_thin_sdk) [![Build Status](https://github.com/splitio/elixir-thin-client/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/splitio/elixir-thin-client/actions/workflows/ci-cd.yml) [![Greenkeeper badge](https://badges.greenkeeper.io/splitio/elixir-thin-client.svg)](https://greenkeeper.io/)
+[![hex.pm version](https://img.shields.io/hexpm/v/split_thin_sdk)](https://img.shields.io/hexpm/v/split_thin_sdk) [![Build Status](https://github.com/splitio/elixir-thin-client/actions/workflows/ci.yml/badge.svg)](https://github.com/splitio/elixir-thin-client/actions/workflows/ci-cd.yml) [![Greenkeeper badge](https://badges.greenkeeper.io/splitio/elixir-thin-client.svg)](https://greenkeeper.io/)
 
 ## Overview
 This SDK is designed to work with Split, the platform for controlled rollouts, which serves features to your users via feature flags to manage your complete customer experience.
