@@ -16,7 +16,7 @@ defmodule Split do
         def start(_type, _args) do
           children = [
             # ... other children ...
-            {Split, [socket_path: "/var/run/split.sock"]}
+            {Split, [address: "/var/run/split.sock"]}
           ]
 
           opts = [strategy: :one_for_one, name: MyApp.Supervisor]
@@ -32,7 +32,7 @@ defmodule Split do
 
   `Split` takes a number of keyword arguments as options when starting. The following options are available:
 
-  - `:socket_path`: **OPTIONAL** The path to the splitd socket file. Default is `"/var/run/splitd.sock"`.
+  - `:address`: **OPTIONAL** The path to the splitd socket file. Default is `"/var/run/splitd.sock"`.
   - `:pool_size`: **OPTIONAL** The size of the pool of connections to the splitd daemon. Default is the number of online schedulers in the Erlang VM (See: https://www.erlang.org/doc/apps/erts/erl_cmd.html).
   - `:connect_timeout`: **OPTIONAL** The timeout in milliseconds to connect to the splitd daemon. Default is `1000`.
 
@@ -52,7 +52,7 @@ defmodule Split do
 
   @typedoc "An option that can be provided when starting `Split`. See [options](#module-options) for more information."
   @type option ::
-          {:socket_path, String.t()}
+          {:address, String.t()}
           | {:pool_size, non_neg_integer()}
           | {:connect_timeout, non_neg_integer()}
 

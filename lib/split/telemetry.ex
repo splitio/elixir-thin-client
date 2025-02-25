@@ -100,7 +100,7 @@ defmodule Split.Telemetry do
 
   #### Metadata
 
-    * `socket_path` - The path to the socket file.
+    * `address` - The path to the socket file.
     * `pool_name` - The name of the pool being used.
 
   ### Connect Stop
@@ -114,7 +114,7 @@ defmodule Split.Telemetry do
 
   #### Metadata
 
-    * `socket_path` - The path to the socket file.
+    * `address` - The path to the socket file.
     * `pool_name` - The name of the pool being used.
     * `error` - The error message if the connection fails.
 
