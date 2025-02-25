@@ -104,7 +104,7 @@ defmodule Split.Sockets.Pool do
 
     unless File.exists?(address) do
       Logger.error("""
-      The Split Daemon (splitd) socket was not found at #{address}.
+      The Split Daemon (splitd) socket was not found at address #{address}.
 
       This is likely because the Splitd daemon is not running.
       """)
