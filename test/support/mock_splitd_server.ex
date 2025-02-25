@@ -11,11 +11,11 @@ defmodule Split.Test.MockSplitdServer do
 
   @impl Supervisor
   def init(opts \\ []) do
-    socket_path = Keyword.get(opts, :socket_path)
+    address = Keyword.get(opts, :address)
     name = Keyword.get(opts, :name, __MODULE__)
     opts = Keyword.put_new(opts, :name, name)
 
-    File.rm(socket_path)
+    File.rm(address)
 
     children = [
       {Task.Supervisor, strategy: :one_for_one, name: :"#{name}-task-supervisor"},
@@ -26,25 +26,25 @@ defmodule Split.Test.MockSplitdServer do
   end
 
   def accept(opts) do
-    socket_path = Keyword.get(opts, :socket_path)
+    address = Keyword.get(opts, :address)
 
     {:ok, socket} =
       :gen_tcp.listen(0,
         active: false,
         packet: :raw,
         reuseaddr: true,
-        ifaddr: {:local, socket_path}
+        ifaddr: {:local, address}
       )
 
     loop_acceptor(socket, opts)
   end
 
-  def wait_until_listening(socket_path) do
-    if File.exists?(socket_path) do
+  def wait_until_listening(address) do
+    if File.exists?(address) do
       :ok
     else
       Process.sleep(1)
-      wait_until_listening(socket_path)
+      wait_until_listening(address)
     end
   end
 

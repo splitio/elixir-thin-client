@@ -17,13 +17,13 @@ defmodule Split.Sockets.Pool do
   end
 
   def start_link(opts) do
-    socket_path = Keyword.get(opts, :socket_path, "/var/run/splitd.sock")
+    address = Keyword.get(opts, :address, "/var/run/splitd.sock")
     pool_name = Keyword.get(opts, :pool_name, __MODULE__)
     pool_size = Keyword.get(opts, :pool_size, System.schedulers_online())
 
     opts =
       opts
-      |> Keyword.put_new(:socket_path, socket_path)
+      |> Keyword.put_new(:address, address)
       |> Keyword.put_new(:pool_size, pool_size)
       |> Keyword.put_new(:pool_name, pool_name)
 
@@ -100,11 +100,11 @@ defmodule Split.Sockets.Pool do
 
   @impl NimblePool
   def init_pool(opts) do
-    socket_path = Keyword.get(opts, :socket_path)
+    address = Keyword.get(opts, :address)
 
-    unless File.exists?(socket_path) do
+    unless File.exists?(address) do
       Logger.error("""
-      The Split Daemon (splitd) socket was not found at #{socket_path}.
+      The Split Daemon (splitd) socket was not found at address #{address}.
 
       This is likely because the Splitd daemon is not running.
       """)
@@ -117,7 +117,7 @@ defmodule Split.Sockets.Pool do
 
   @impl NimblePool
   def init_worker({opts, _metrics_ref} = pool_state) do
-    {:ok, Conn.new(Keyword.get(opts, :socket_path), opts), pool_state}
+    {:ok, Conn.new(Keyword.get(opts, :address), opts), pool_state}
   end
 
   @impl NimblePool

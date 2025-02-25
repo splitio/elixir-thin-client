@@ -9,15 +9,13 @@ defmodule Split.Sockets.PoolTest do
 
   setup_all context do
     test_id = :erlang.phash2(context.module)
-    socket_path = "/tmp/test-splitd-#{test_id}.sock"
+    address = "/tmp/test-splitd-#{test_id}.sock"
 
-    start_supervised!(
-      {Split.Test.MockSplitdServer, socket_path: socket_path, name: :"test-#{test_id}"}
-    )
+    start_supervised!({Split.Test.MockSplitdServer, address: address, name: :"test-#{test_id}"})
 
-    Split.Test.MockSplitdServer.wait_until_listening(socket_path)
+    Split.Test.MockSplitdServer.wait_until_listening(address)
 
-    start_supervised!({Split, socket_path: socket_path, pool_name: __MODULE__, pool_size: 10})
+    start_supervised!({Split, address: address, pool_name: __MODULE__, pool_size: 10})
 
     :ok
   end
