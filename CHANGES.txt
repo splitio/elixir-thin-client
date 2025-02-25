@@ -1,5 +1,7 @@
-0.2.1 (February 24, 2025):
+1.0.0 (February 25, 2025):
  - Fixed the SDK language version to correctly reflect the package version when it's installed from hex.pm.
+ - BREAKING CHANGES:
+    - Renamed the `:socket_path` option to `:address` in `Split.Supervisor.start_link/1`.
 
 0.2.0 (February 14, 2025):
  - Added new variations of the get treatment functions to support evaluating flags in given flag set/s: `Split.get_treatments_by_flag_set/3`, `Split.get_treatments_by_flag_sets/3`, `Split.get_treatments_with_config_by_flag_set/3`, and `Split.get_treatments_with_config_by_flag_sets/3`.

@@ -9,34 +9,34 @@ defmodule Split.Sockets.ConnTest do
   describe "telemetry events" do
     setup context do
       test_id = :erlang.phash2(context.test)
-      socket_path = "/tmp/test-splitd-#{test_id}.sock"
+      address = "/tmp/test-splitd-#{test_id}.sock"
       process_name = :"test-#{test_id}"
 
       start_supervised!(
-        {Split.Test.MockSplitdServer, socket_path: socket_path, name: process_name},
+        {Split.Test.MockSplitdServer, address: address, name: process_name},
         id: process_name,
         restart: :transient
       )
 
-      Split.Test.MockSplitdServer.wait_until_listening(socket_path)
+      Split.Test.MockSplitdServer.wait_until_listening(address)
 
-      {:ok, socket_path: socket_path, splitd_name: process_name}
+      {:ok, address: address, splitd_name: process_name}
     end
 
-    test "emits telemetry events for successful connection", %{socket_path: socket_path} do
+    test "emits telemetry events for successful connection", %{address: address} do
       ref =
         :telemetry_test.attach_event_handlers(self(), [
           [:split, :connect, :start],
           [:split, :connect, :stop]
         ])
 
-      Conn.new(socket_path) |> Conn.connect()
+      Conn.new(address) |> Conn.connect()
 
-      assert_received {[:split, :connect, :start], ^ref, _, %{socket_path: ^socket_path}}
+      assert_received {[:split, :connect, :start], ^ref, _, %{address: ^address}}
       assert_received {[:split, :connect, :stop], ^ref, _, %{}}
     end
 
-    test "emits telemetry events for registration message on connect", %{socket_path: socket_path} do
+    test "emits telemetry events for registration message on connect", %{address: address} do
       ref =
         :telemetry_test.attach_event_handlers(self(), [
           [:split, :send, :start],
@@ -45,7 +45,7 @@ defmodule Split.Sockets.ConnTest do
           [:split, :receive, :stop]
         ])
 
-      Conn.new(socket_path) |> Conn.connect()
+      Conn.new(address) |> Conn.connect()
 
       assert_received {[:split, :send, :start], ^ref, _,
                        %{request: %Message{v: 1, o: @register_opcode}}}
@@ -59,7 +59,7 @@ defmodule Split.Sockets.ConnTest do
     end
 
     test "emits telemetry events for failed connection", %{
-      socket_path: socket_path,
+      address: address,
       splitd_name: splitd_name
     } do
       ref =
@@ -71,21 +71,21 @@ defmodule Split.Sockets.ConnTest do
       # Stop the mocked splitd socket to receive connection errors
       :ok = stop_supervised(splitd_name)
 
-      assert {:error, _conn, reason} = Conn.new(socket_path) |> Conn.connect()
+      assert {:error, _conn, reason} = Conn.new(address) |> Conn.connect()
 
-      assert_received {[:split, :connect, :start], ^ref, _, %{socket_path: ^socket_path}}
+      assert_received {[:split, :connect, :start], ^ref, _, %{address: ^address}}
 
       assert_received {[:split, :connect, :stop], ^ref, _, %{error: ^reason}}
     end
 
-    test "emits telemetry events for successful message sending", %{socket_path: socket_path} do
+    test "emits telemetry events for successful message sending", %{address: address} do
       ref =
         :telemetry_test.attach_event_handlers(self(), [
           [:split, :send, :start],
           [:split, :send, :stop]
         ])
 
-      {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
+      {:ok, conn} = Conn.new(address) |> Conn.connect()
 
       message = Message.get_treatment(key: "user-id", feature_name: "feature")
 
@@ -97,7 +97,7 @@ defmodule Split.Sockets.ConnTest do
     end
 
     test "emits telemetry events for failed message sending", %{
-      socket_path: socket_path,
+      address: address,
       splitd_name: splitd_name
     } do
       ref =
@@ -106,7 +106,7 @@ defmodule Split.Sockets.ConnTest do
           [:split, :send, :stop]
         ])
 
-      {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
+      {:ok, conn} = Conn.new(address) |> Conn.connect()
 
       message = Message.get_treatment(key: "user-id", feature_name: "feature")
 
@@ -120,14 +120,14 @@ defmodule Split.Sockets.ConnTest do
       assert_received {[:split, :send, :stop], ^ref, _, %{error: ^reason}}
     end
 
-    test "emits telemetry events for successful message receiving", %{socket_path: socket_path} do
+    test "emits telemetry events for successful message receiving", %{address: address} do
       ref =
         :telemetry_test.attach_event_handlers(self(), [
           [:split, :receive, :start],
           [:split, :receive, :stop]
         ])
 
-      {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
+      {:ok, conn} = Conn.new(address) |> Conn.connect()
 
       message = Message.get_treatment(key: "user-id", feature_name: "feature")
 
@@ -138,14 +138,14 @@ defmodule Split.Sockets.ConnTest do
       assert_received {[:split, :receive, :stop], ^ref, _, %{response: ^response}}
     end
 
-    test "emits telemetry events for failed message receiving", %{socket_path: socket_path} do
+    test "emits telemetry events for failed message receiving", %{address: address} do
       ref =
         :telemetry_test.attach_event_handlers(self(), [
           [:split, :receive, :start],
           [:split, :receive, :stop]
         ])
 
-      {:ok, conn} = Conn.new(socket_path) |> Conn.connect()
+      {:ok, conn} = Conn.new(address) |> Conn.connect()
 
       # receive the registration messages
       assert_received {[:split, :receive, :start], ^ref, _, %{}}

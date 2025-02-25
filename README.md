@@ -36,7 +36,7 @@ Below is a simple example that describes the instantiation and most basic usage 
 
 ```elixir
 # Start the SDK supervisor
-Split.Supervisor.start_link(socket_path: "/var/run/splitd.sock")
+Split.Supervisor.start_link(address: "/var/run/splitd.sock")
 
 # Get treatment for a user
 case Split.get_treatment(user_id, feature_flag_name) do
