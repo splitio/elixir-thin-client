@@ -4,7 +4,7 @@ defmodule SplitThinElixir.MixProject do
   def project do
     [
       app: :split,
-      version: "1.0.0",
+      version: "1.0.1",
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -54,7 +54,8 @@ defmodule SplitThinElixir.MixProject do
       {:telemetry, "~> 1.0"},
       # Dev and test dependencies
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.21", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.21", only: :dev, runtime: false},
+      {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
     ]
   end
 
