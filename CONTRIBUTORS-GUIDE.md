@@ -5,7 +5,7 @@ Split SDK is an open source project and we welcome feedback and contribution. Th
 ## Development process
 
 1. Fork the repository and create a topic branch from `development` branch. Please use a descriptive name for your branch.
-2. Run `mix deps.get` to have the dependencies up to date.
+2. Run `mix deps.get` to have the dependencies up to date, and `mix deps.audit` to check for vulnerabilities.
 3. While developing, use descriptive messages in your commits. Avoid short or meaningless sentences like: "fix bug".
 4. Make sure to add tests for both positive and negative cases.
 5. If your changes have any impact on the public API, make sure you update the type specification and documentation attributes (`@spec`, `@doc`, `@moduledoc`), as well as it's related test file.
