@@ -1,3 +1,6 @@
+1.0.1 (November 7, 2025):
+ - Updated mix.lock to latest compatible dependency versions.
+
 1.0.0 (February 25, 2025):
  - Fixed the SDK language version to correctly reflect the package version when it's installed from hex.pm.
  - BREAKING CHANGES:

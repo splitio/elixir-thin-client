@@ -5,7 +5,7 @@ defmodule Split.RPC.Message do
   use Split.RPC.Opcodes
 
   @protocol_version 0x01
-  @client_id "Splitd_Elixir-1.0.0"
+  @client_id "Splitd_Elixir-1.0.1"
 
   @type opcode :: unquote(Enum.reduce(@opcodes, &{:|, [], [&1, &2]}))
   @type protocol_version :: unquote(@protocol_version)

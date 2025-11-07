@@ -21,7 +21,7 @@ by adding `split_thin_elixir` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:split, "~> 0.2.0", hex: :split_thin_sdk}
+    {:split, "~> 1.0.1", hex: :split_thin_sdk}
   ]
 end
 ```
