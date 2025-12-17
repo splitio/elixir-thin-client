@@ -147,9 +147,7 @@ defmodule Split.Sockets.Pool do
         {:remove, :closed, pool_state}
 
       other ->
-        Logger.debug(
-          "Error checking in socket #{inspect(other)} to the pool. Socket is closed."
-        )
+        Logger.debug("Error checking in socket #{inspect(other)} to the pool. Socket is closed.")
 
         {:remove, :closed, pool_state}
     end
