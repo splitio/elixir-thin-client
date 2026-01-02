@@ -139,14 +139,15 @@ defmodule Split.Sockets.Pool do
   def handle_checkin(checkin, _from, _old_conn, {_opts, metrics_ref} = pool_state) do
     PoolMetrics.update(metrics_ref, {:connections_in_use, -1})
 
-    with {:ok, conn} <- checkin,
-         true <- Conn.is_open?(conn) do
-      {:ok, conn, pool_state}
-    else
-      _ ->
-        Logger.debug(
-          "Error checking in socket #{inspect(checkin)} to the pool. Socket is closed."
-        )
+    case checkin do
+      {:ok, conn} ->
+        {:ok, conn, pool_state}
+
+      :closed ->
+        {:remove, :closed, pool_state}
+
+      other ->
+        Logger.debug("Error checking in socket #{inspect(other)} to the pool. Socket is closed.")
 
         {:remove, :closed, pool_state}
     end
