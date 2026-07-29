@@ -63,6 +63,16 @@ pipeline:
                       mix deps.get
               - step:
                   type: Run
+                  name: Validate Version
+                  identifier: Validate_Version
+                  spec:
+                    shell: Bash
+                    command: |-
+                      export PATH="$HOME/.local/bin:$PATH"
+                      eval "$(mise activate bash)"
+                      elixir scripts/validate_version.exs
+              - step:
+                  type: Run
                   name: Run Tests
                   identifier: Run_Tests
                   spec:
