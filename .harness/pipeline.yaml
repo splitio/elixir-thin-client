@@ -41,9 +41,11 @@ pipeline:
                     shell: Bash
                     command: |-
                       curl https://mise.run | sh
-                      export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+                      export PATH="$HOME/.local/bin:$PATH"
                       mise use --global erlang@<+matrix.otpVersion>
+                      eval "$(mise env -s bash)"
                       mise use --global elixir@<+matrix.elixirVersion>
+                      eval "$(mise env -s bash)"
                       erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell
                       elixir --version
               - step:
