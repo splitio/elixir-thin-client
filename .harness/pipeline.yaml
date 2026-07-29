@@ -162,8 +162,14 @@ pipeline:
                       echo "Posted SonarQube quality gate status: ${GH_STATE}"
         strategy:
           matrix:
-            include:
+            elixirVersion:
+              - "1.14.0"
+              - "1.19.4"
+            otpVersion:
+              - "25"
+              - "28"
+            exclude:
               - elixirVersion: "1.14.0"
-                otpVersion: "25"
-              - elixirVersion: "1.19.4"
                 otpVersion: "28"
+              - elixirVersion: "1.19.4"
+                otpVersion: "25"
