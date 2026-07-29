@@ -41,10 +41,11 @@ pipeline:
                     shell: Bash
                     command: |-
                       curl https://mise.run | sh
-                      export PATH="$HOME/.local/share/mise/shims:$HOME/.local/bin:$PATH"
+                      export PATH="$HOME/.local/bin:$PATH"
                       mise use --global erlang@<+matrix.otpVersion>
-                      mise reshim
+                      export PATH="$(mise where erlang@<+matrix.otpVersion>)/bin:$PATH"
                       mise use --global elixir@<+matrix.elixirVersion>
+                      eval "$(mise activate bash)"
                       erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell
                       elixir --version
               - step:
